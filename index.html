@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f766e">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kind Pharmacy — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0A2540;
+    --navy-800:#0d2f52;
+    --navy-700:#123a63;
+    --sky:#0ea5e9;
+    --sky-dark:#0284c7;
+    --sky-light:#e0f2fe;
+    --white:#ffffff;
+    --bg:#f4f6f9;
+    --gray-50:#f8fafc;
+    --gray-100:#eef1f5;
+    --gray-200:#e2e8f0;
+    --gray-300:#cbd5e1;
+    --gray-500:#64748b;
+    --text:#0f1e33;
+    --text-soft:#526073;
+    --success:#16a34a;
+    --success-light:#dcfce7;
+    --warning:#f59e0b;
+    --warning-light:#fef3c7;
+    --danger:#dc2626;
+    --danger-light:#fee2e2;
+    --radius:12px;
+    --radius-lg:16px;
+    --shadow-sm:0 1px 2px rgba(10,37,64,.06);
+    --shadow-md:0 6px 20px rgba(10,37,64,.08);
+    --shadow-lg:0 20px 48px rgba(10,37,64,.16);
+    --font:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font);
+    color:var(--text);
+    background:var(--bg);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- App shell ---------- */
+  .app-shell{display:flex;min-height:100vh;}
+  .sidebar{
+    width:252px;flex-shrink:0;background:linear-gradient(180deg,var(--navy) 0%,#071c33 100%);
+    color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;
+    z-index:200;transition:width .25s ease;overflow:hidden;
+  }
+  .sidebar.collapsed{width:78px;}
+  .sidebar-brand{display:flex;align-items:center;gap:12px;padding:22px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .sidebar-brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(155deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 4px 14px rgba(14,165,233,.4);color:#fff;}
+  .sidebar-brand-text{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap;}
+  .sidebar-brand-text span{color:var(--sky);font-weight:600;}
+  .sidebar.collapsed .sidebar-brand-text,.sidebar.collapsed .sidebar-link span,.sidebar.collapsed .sidebar-foot{display:none;}
+  .sidebar.collapsed .sidebar-brand{flex-direction:column;padding:16px 0;gap:10px;}
+  .sidebar-collapse-btn{margin-left:auto;background:rgba(255,255,255,.08);border:none;color:#c9d6e5;width:26px;height:26px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:.2s;flex-shrink:0;}
+  .sidebar.collapsed .sidebar-collapse-btn{margin-left:0;}
+  .sidebar-collapse-btn:hover{background:rgba(255,255,255,.18);color:#fff;}
+  .sidebar.collapsed .sidebar-collapse-btn i{transform:rotate(180deg);}
+  .sidebar-section-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#5f7591;padding:14px 22px 6px;}
+  .sidebar.collapsed .sidebar-section-label{display:none;}
+  .sidebar-nav{display:flex;flex-direction:column;gap:3px;padding:6px 12px 16px;flex:1;overflow-y:auto;}
+  .sidebar-link{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:10px;color:#c9d6e5;text-decoration:none;font-size:13.5px;font-weight:600;transition:.18s;white-space:nowrap;}
+  .sidebar-link i{width:18px;text-align:center;font-size:15px;flex-shrink:0;}
+  .sidebar-link:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .sidebar-link.active{background:linear-gradient(135deg,var(--sky),var(--sky-dark));color:#fff;box-shadow:0 4px 14px rgba(14,165,233,.35);}
+  .sidebar-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);font-size:10.5px;color:#8ea3bd;font-family:var(--mono);letter-spacing:.02em;}
+
+  .main-wrap{flex:1;margin-left:252px;display:flex;flex-direction:column;min-height:100vh;transition:margin-left .25s ease;min-width:0;}
+  .main-wrap.sidebar-collapsed{margin-left:78px;}
+  .topbar-main{
+    display:flex;align-items:center;gap:16px;justify-content:space-between;
+    background:#fff;border-bottom:1px solid var(--gray-200);padding:16px 32px;
+    position:sticky;top:0;z-index:100;flex-wrap:wrap;
+  }
+  .topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+  .mobile-menu-btn{display:none;background:var(--gray-100);border:none;width:36px;height:36px;border-radius:9px;color:var(--navy);font-size:15px;cursor:pointer;flex-shrink:0;}
+  .topbar-title h1{font-size:19px;font-weight:800;color:var(--text);letter-spacing:-.01em;}
+  .topbar-title p{font-size:12.5px;color:var(--text-soft);margin-top:1px;}
+  .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .topbar-clock{font-family:var(--mono);font-size:12.5px;color:var(--text-soft);background:var(--gray-100);padding:8px 15px;border-radius:20px;}
+  .topbar-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(155deg,var(--navy),var(--navy-700));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .refresh-btn{background:var(--gray-100);border:none;width:36px;height:36px;border-radius:9px;color:var(--navy);font-size:14px;cursor:pointer;flex-shrink:0;transition:.18s;}
+  .refresh-btn:hover{background:var(--sky-light);color:var(--sky-dark);}
+  .refresh-btn.spinning i{animation:spin .6s linear;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+  .page-content{padding:30px 32px 56px;flex:1;max-width:1400px;}
+
+  @media(max-width:980px){
+    .sidebar{transform:translateX(-100%);}
+    .sidebar.mobile-open{transform:translateX(0);}
+    .main-wrap{margin-left:0;}
+    .mobile-menu-btn{display:flex;align-items:center;justify-content:center;}
+    .page-content{padding:22px 18px 40px;}
+    .topbar-main{padding:14px 18px;}
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{margin-bottom:22px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--sky-dark);background:var(--sky-light);
+    padding:6px 14px;border-radius:20px;margin-bottom:12px;
+  }
+  .eyebrow i{color:var(--sky-dark);}
+  .hero h2{
+    font-weight:800;
+    font-size:clamp(1.5rem, 2.6vw, 2rem);
+    line-height:1.15;
+    letter-spacing:-.02em;
+    color:var(--navy);
+  }
+  .hero p{margin-top:8px;max-width:560px;font-size:.92rem;color:var(--text-soft);line-height:1.6;}
+  .data-note{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--text-soft);background:#fff;border:1px solid var(--gray-200);padding:8px 14px;border-radius:20px;white-space:nowrap;}
+  .data-note i{color:var(--sky-dark);}
+
+  /* ---------- Section label ---------- */
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:30px 0 14px;}
+  .section-head:first-of-type{margin-top:6px;}
+  .section-head h3{font-size:1.02rem;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:9px;}
+  .section-head h3 i{color:var(--sky-dark);font-size:.9rem;}
+  .section-head span{font-size:.8rem;color:var(--text-soft);}
+
+  /* ---------- KPI cards ---------- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;}
+  @media(max-width:1180px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+  .kpi-card{
+    background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);
+    padding:18px 18px 16px;box-shadow:var(--shadow-sm);
+    transition:transform .2s ease, box-shadow .2s ease;position:relative;overflow:hidden;
+  }
+  .kpi-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;flex-shrink:0;}
+  .kpi-icon.i-navy{background:linear-gradient(155deg,var(--navy),var(--navy-700));}
+  .kpi-icon.i-sky{background:linear-gradient(155deg,var(--sky),var(--sky-dark));}
+  .kpi-icon.i-success{background:linear-gradient(155deg,#22c55e,var(--success));}
+  .kpi-icon.i-warning{background:linear-gradient(155deg,#fbbf24,var(--warning));}
+  .kpi-icon.i-danger{background:linear-gradient(155deg,#f87171,var(--danger));}
+  .kpi-delta{font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:20px;}
+  .kpi-delta.up{color:var(--success);background:var(--success-light);}
+  .kpi-delta.down{color:var(--danger);background:var(--danger-light);}
+  .kpi-delta.flat{color:var(--text-soft);background:var(--gray-100);}
+  .kpi-num{font-size:1.32rem;font-weight:800;color:var(--navy);line-height:1.15;letter-spacing:-.01em;}
+  .kpi-lbl{font-size:.74rem;color:var(--text-soft);font-weight:600;margin-top:3px;}
+
+  /* ---------- Charts ---------- */
+  .charts-row{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;}
+  @media(max-width:1100px){.charts-row{grid-template-columns:1fr;}}
+  .chart-card{
+    background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);
+    padding:20px 22px;box-shadow:var(--shadow-sm);
+  }
+  .chart-card h4{font-size:.92rem;font-weight:800;color:var(--navy);margin-bottom:2px;}
+  .chart-card .sub{font-size:.76rem;color:var(--text-soft);margin-bottom:14px;}
+  .chart-wrap{position:relative;height:230px;}
+  .chart-wrap.pie{height:230px;}
+  .legend-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-soft);font-size:.82rem;flex-direction:column;gap:8px;}
+  .legend-empty i{font-size:22px;color:var(--gray-300);}
+
+  /* ---------- List / table cards ---------- */
+  .cards-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .cards-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  @media(max-width:1180px){.cards-3,.cards-4{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:640px){.cards-3,.cards-4{grid-template-columns:1fr;}}
+  .list-card{
+    background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);
+    padding:18px 20px 16px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;
+  }
+  .list-card h5{font-size:.85rem;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .list-card h5 i{font-size:.8rem;}
+  .list-card h5 .count-badge{margin-left:auto;font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--sky-dark);background:var(--sky-light);padding:2px 9px;border-radius:20px;}
+  .rank-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);}
+  .rank-row:last-child{border-bottom:none;padding-bottom:0;}
+  .rank-num{width:20px;height:20px;border-radius:6px;background:var(--gray-100);color:var(--text-soft);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .rank-row:nth-child(1) .rank-num{background:#fef3c7;color:#b45309;}
+  .rank-row:nth-child(2) .rank-num{background:#e2e8f0;color:#475569;}
+  .rank-row:nth-child(3) .rank-num{background:#fee2e2;color:#b91c1c;}
+  .rank-name{font-size:.82rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rank-sub{font-size:.72rem;color:var(--text-soft);}
+  .rank-val{margin-left:auto;font-size:.8rem;font-weight:800;color:var(--navy);white-space:nowrap;flex-shrink:0;}
+  .alert-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);}
+  .alert-row:last-child{border-bottom:none;padding-bottom:0;}
+  .alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .alert-dot.danger{background:var(--danger);}
+  .alert-dot.warning{background:var(--warning);}
+  .alert-name{font-size:.8rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .alert-sub{font-size:.71rem;color:var(--text-soft);}
+  .alert-badge{margin-left:auto;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+  .alert-badge.danger{color:var(--danger);background:var(--danger-light);}
+  .alert-badge.warning{color:#b45309;background:var(--warning-light);}
+  .empty-mini{color:var(--text-soft);font-size:.8rem;padding:16px 0;text-align:center;}
+  .empty-mini i{display:block;font-size:20px;margin-bottom:6px;color:var(--gray-300);}
+  .list-card .foot-link{margin-top:12px;font-size:.76rem;font-weight:700;color:var(--sky-dark);text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+  .list-card .foot-link:hover{text-decoration:underline;}
+  .status-pill-sm{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+  .status-pill-sm.ok{background:var(--success-light);color:var(--success);}
+  .status-pill-sm.ret{background:var(--danger-light);color:var(--danger);}
+
+  /* ---------- Cards grid (suite tools) ---------- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:36px;}
+  @media(max-width:980px){.grid{grid-template-columns:1fr;}}
+  .card{
+    background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);
+    padding:26px 24px 24px;display:flex;flex-direction:column;gap:14px;
+    text-decoration:none;color:inherit;
+    box-shadow:var(--shadow-sm);
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--navy),var(--sky));
+    transform:scaleX(0);transform-origin:left;transition:transform .3s ease;
+  }
+  .card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);border-color:transparent;}
+  .card:hover::before{transform:scaleX(1);}
+  .card-icon{
+    width:50px;height:50px;border-radius:13px;
+    display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;
+  }
+  .ic-pos{background:linear-gradient(155deg,var(--sky),var(--sky-dark));}
+  .ic-demand{background:linear-gradient(155deg,var(--navy),var(--navy-700));}
+  .ic-expiry{background:linear-gradient(155deg,#64748b,#334155);}
+  .card h4{font-weight:800;font-size:1.18rem;letter-spacing:-.01em;}
+  .card p.desc{color:var(--text-soft);font-size:.9rem;line-height:1.55;flex:1;}
+  .card ul{list-style:none;display:flex;flex-direction:column;gap:7px;margin-top:2px;}
+  .card ul li{font-size:.82rem;color:var(--text-soft);display:flex;align-items:center;gap:9px;}
+  .card ul li i{color:var(--sky-dark);font-size:.62rem;width:12px;}
+  .card .go{
+    margin-top:6px;display:inline-flex;align-items:center;gap:8px;
+    font-weight:700;font-size:.85rem;color:var(--navy);
+  }
+  .card .go i{transition:transform .2s ease;font-size:.78rem;}
+  .card:hover .go i{transform:translateX(4px);}
+
+  /* ---------- Footer ---------- */
+  footer.suite-footer{
+    margin-top:8px;padding:20px 0 4px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    border-top:1px solid var(--gray-200);color:var(--text-soft);font-size:.8rem;
+  }
+  footer.suite-footer .tag{font-family:var(--mono);}
+</style>
+</head>
+<body>
+<script>
+  // ================== KP CLOUD SYNC ==================
+  // PASTE YOUR APPS SCRIPT WEB APP URL HERE (same URL in every file)
+  const KP_CLOUD_URL = 'https://script.google.com/macros/s/AKfycbylNU6aq7mG1-fT5pbsPBcybJu-gIdnur6Nk4n1TmiQYuw29goMUEz4AWGFXSxsRyYyTw/exec';
+
+  const KPCloud = (() => {
+    async function get(action, params = {}) {
+      const qs = new URLSearchParams({ action, ...params }).toString();
+      const res = await fetch(`${KP_CLOUD_URL}?${qs}`);
+      return res.json();
+    }
+    async function post(body) {
+      const res = await fetch(KP_CLOUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+    return {
+      getCatalog: () => get('catalog').then(r => r.ok ? r.items : null),
+      saveCatalog: (items) => post({ action: 'saveCatalog', items }),
+      getSales: () => get('sales').then(r => r.ok ? r.sales : null),
+      addSale: (sale) => post({ action: 'addSale', sale }),
+      updateSale: (id, patch) => post({ action: 'updateSale', id, patch }),
+      getKV: (key) => get('kv', { key }).then(r => r.ok ? r.value : null),
+      setKV: (key, value) => post({ action: 'setKV', key, value }),
+      getTable: (name) => get('table', { name }).then(r => r.ok ? r.items : null),
+      saveTable: (name, items) => post({ action: 'saveTable', name, items })
+    };
+  })();
+  // =====================================================
+</script>
+
+
+<div class="app-shell">
+  <aside class="sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-mark"><i class="fa-solid fa-kit-medical"></i></div>
+      <div class="sidebar-brand-text">Kind <span>Pharmacy</span></div>
+      <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar"><i class="fa-solid fa-angles-left"></i></button>
+    </div>
+    <div class="sidebar-section-label">Suite</div>
+    <nav class="sidebar-nav">
+      <a href="index.html" class="sidebar-link active"><i class="fa-solid fa-grip"></i><span>Dashboard</span></a>
+      <a href="POS.html" class="sidebar-link"><i class="fa-solid fa-cash-register"></i><span>Billing / POS</span></a>
+      <a href="Kind_Pharmacy_Demand_Creator.html" class="sidebar-link"><i class="fa-solid fa-clipboard-list"></i><span>Demand Creator</span></a>
+      <a href="Expiry_Check.html" class="sidebar-link"><i class="fa-solid fa-hourglass-half"></i><span>Expiry Tracker</span></a>
+      <a href="New_Stock_Expiry_Check.html" class="sidebar-link"><i class="fa-solid fa-boxes-packing"></i><span>New Stock Expiry Check</span></a>
+      <a href="Reports.html" class="sidebar-link"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+    </nav>
+    <div class="sidebar-foot" id="sidebarClock">—</div>
+  </aside>
+
+  <div class="main-wrap" id="mainWrap">
+    <header class="topbar-main">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fa-solid fa-bars"></i></button>
+        <div class="topbar-title">
+          <h1>Dashboard</h1>
+          <p>Live overview, built from your actual sales &amp; inventory data</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="refresh-btn" id="refreshBtn" title="Refresh dashboard"><i class="fa-solid fa-arrows-rotate"></i></button>
+        <span class="topbar-clock" id="liveClock">—</span>
+        <div class="topbar-avatar">KP</div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <div class="hero">
+        <div>
+          <div class="eyebrow"><i class="fa-solid fa-chart-line"></i> Operations Suite</div>
+          <h2>Today at a glance.</h2>
+          <p>Numbers pulled straight from Billing/POS and the Expiry Tracker in this browser — no separate entry needed.</p>
+        </div>
+        <div class="data-note"><i class="fa-solid fa-circle-info"></i> <span id="dataNoteText">Loading data…</span></div>
+      </div>
+
+      <!-- ===================== KPI STRIP ===================== -->
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <!-- ===================== CHARTS ===================== -->
+      <div class="section-head"><h3><i class="fa-solid fa-chart-column"></i> Trends</h3><span>Last 14 days · this month vs last</span></div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <h4>Sales &amp; profit — last 14 days</h4>
+          <div class="sub">Daily revenue and profit from completed sales</div>
+          <div class="chart-wrap" id="trendChartWrap"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>This month vs last month</h4>
+          <div class="sub">Sales and profit comparison</div>
+          <div class="chart-wrap" id="compareChartWrap"><canvas id="compareChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-row" style="margin-top:20px;">
+        <div class="chart-card">
+          <h4>Revenue by company — this month</h4>
+          <div class="sub">Share of sales revenue per manufacturer</div>
+          <div class="chart-wrap pie" id="companyChartWrap"><canvas id="companyChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h4>Inventory health</h4>
+          <div class="sub">Batches by expiry status, from the Expiry Tracker</div>
+          <div class="chart-wrap pie" id="healthChartWrap"><canvas id="healthChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ===================== INSIGHTS ===================== -->
+      <div class="section-head"><h3><i class="fa-solid fa-ranking-star"></i> This month's insights</h3><span>Based on completed sales</span></div>
+      <div class="cards-3" id="insightsRow"></div>
+
+      <!-- ===================== INVENTORY ALERTS ===================== -->
+      <div class="section-head"><h3><i class="fa-solid fa-triangle-exclamation"></i> Inventory alerts</h3><span>From the Expiry Tracker</span></div>
+      <div class="cards-4" id="alertsRow"></div>
+
+      <!-- ===================== RECENT ACTIVITY ===================== -->
+      <div class="section-head"><h3><i class="fa-solid fa-clock-rotate-left"></i> Recent activity</h3><span>Latest first</span></div>
+      <div class="cards-3" id="activityRow"></div>
+
+      <!-- ===================== SUITE TOOLS ===================== -->
+      <div class="section-head">
+        <h3><i class="fa-solid fa-grip"></i> Suite tools</h3>
+        <span>Click a card to open</span>
+      </div>
+
+      <div class="grid">
+
+        <a class="card" href="POS.html">
+          <div class="card-icon ic-pos"><i class="fa-solid fa-cash-register"></i></div>
+          <h4>Billing &amp; POS</h4>
+          <p class="desc">Ring up sales fast with pack &amp; unit pricing across the full medicine database.</p>
+          <ul>
+            <li><i class="fa-solid fa-circle"></i> Pack and loose-unit pricing</li>
+            <li><i class="fa-solid fa-circle"></i> Full medicine catalogue search</li>
+            <li><i class="fa-solid fa-circle"></i> Printable receipts, incl. reprints</li>
+          </ul>
+          <span class="go">Open Billing / POS <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <a class="card" href="Kind_Pharmacy_Demand_Creator.html">
+          <div class="card-icon ic-demand"><i class="fa-solid fa-clipboard-list"></i></div>
+          <h4>Demand Creator</h4>
+          <p class="desc">Build supplier demand lists in seconds and export them as clean PDFs or sheets.</p>
+          <ul>
+            <li><i class="fa-solid fa-circle"></i> Quick-add order builder</li>
+            <li><i class="fa-solid fa-circle"></i> PDF &amp; Excel export</li>
+            <li><i class="fa-solid fa-circle"></i> Running stats as you build</li>
+          </ul>
+          <span class="go">Open Demand Creator <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <a class="card" href="Expiry_Check.html">
+          <div class="card-icon ic-expiry"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h4>Expiry Tracker</h4>
+          <p class="desc">Track every batch's expiry date and catch near-expired stock before it's a loss.</p>
+          <ul>
+            <li><i class="fa-solid fa-circle"></i> 1 / 3 / 6-month expiry filters</li>
+            <li><i class="fa-solid fa-circle"></i> Bulk entry &amp; JSON backup</li>
+            <li><i class="fa-solid fa-circle"></i> Printable expiry reports</li>
+          </ul>
+          <span class="go">Open Expiry Tracker <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+      </div>
+
+      <footer class="suite-footer">
+        <div class="tag">Kind Pharmacy Suite</div>
+        <div id="footDate"></div>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // CLOCK + SIDEBAR (unchanged from the rest of the suite)
+  // ============================================================
+  function tick(){
+    const now = new Date();
+    const clock = document.getElementById('liveClock');
+    const sideClock = document.getElementById('sidebarClock');
+    const foot = document.getElementById('footDate');
+    const timeStr = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const dateStr = now.toLocaleDateString([], {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+    if(clock) clock.textContent = dateStr + '  ·  ' + timeStr;
+    if(sideClock) sideClock.textContent = dateStr + ' · ' + timeStr;
+    if(foot) foot.textContent = 'Today — ' + dateStr;
+  }
+  tick();
+  setInterval(tick, 30000);
+
+  const sidebar = document.getElementById('appSidebar');
+  const mainWrap = document.getElementById('mainWrap');
+  const collapseBtn = document.getElementById('sidebarCollapseBtn');
+  const mobileBtn = document.getElementById('mobileMenuBtn');
+
+  collapseBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    mainWrap.classList.toggle('sidebar-collapsed');
+  });
+  mobileBtn.addEventListener('click', () => { sidebar.classList.toggle('mobile-open'); });
+  document.addEventListener('click', (e) => {
+    if(window.innerWidth <= 980 && sidebar.classList.contains('mobile-open')){
+      if(!sidebar.contains(e.target) && !mobileBtn.contains(e.target)){
+        sidebar.classList.remove('mobile-open');
+      }
+    }
+  });
+
+  // ============================================================
+  // DATA ACCESS — reads the SAME localStorage keys the other
+  // suite tools already write to, so this dashboard reflects
+  // real data with no extra data entry required.
+  //   - 'kindPharmacy_sales_log'  → written by POS.html
+  //   - 'medicineTrackerData'     → written by Expiry_Check.html
+  //   - 'kp_demand_autosave_v1'   → written by Kind_Pharmacy_Demand_Creator.html
+  // ============================================================
+  function safeParse(raw, fallback){
+    if (!raw) return fallback;
+    try { return JSON.parse(raw); } catch(e){ return fallback; }
+  }
+
+  function loadSales(){
+    const arr = safeParse(localStorage.getItem('kindPharmacy_sales_log'), []);
+    return Array.isArray(arr) ? arr : [];
+  }
+
+  function loadInventory(){
+    const arr = safeParse(localStorage.getItem('medicineTrackerData'), []);
+    if (!Array.isArray(arr)) return [];
+    return arr.map(m => ({
+      ...m,
+      expiryDate: m.expiryDate ? new Date(m.expiryDate) : null
+    }));
+  }
+
+  function loadDemand(){
+    const payload = safeParse(localStorage.getItem('kp_demand_autosave_v1'), null);
+    if (payload && Array.isArray(payload.demand)) return payload.demand;
+    return [];
+  }
+
+  // ============================================================
+  // DATE HELPERS
+  // ============================================================
+  function localDateStr(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function daysUntil(dateObj){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(dateObj); d.setHours(0,0,0,0);
+    return Math.ceil((d - today) / (1000*3600*24));
+  }
+  function fmtMoney(n){
+    return (Number(n)||0).toLocaleString('en-PK', { minimumFractionDigits:0, maximumFractionDigits:0 });
+  }
+  function escapeHtml(str){
+    return String(str==null?'':str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ============================================================
+  // ANALYTICS — pure functions that turn raw records into the
+  // numbers/lists the dashboard displays.
+  // ============================================================
+  function analyzeSales(sales){
+    const now = new Date();
+    const todayStr = localDateStr(now);
+    const monthPrefix = todayStr.slice(0,7);
+    const prevMonthRef = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    const prevMonthPrefix = localDateStr(prevMonthRef).slice(0,7);
+
+    let todaySales=0, todayProfit=0, todayTx=0;
+    const todayCustomers = new Set();
+    let monthSales=0, monthProfit=0, monthTx=0;
+    let prevMonthSales=0, prevMonthProfit=0;
+
+    const itemAgg = {};    // name -> {name, qty, revenue, tx}
+    const companyAgg = {}; // manufacturer -> revenue
+
+    const trendDays = 14;
+    const dailyTrend = {};
+    for (let i = trendDays - 1; i >= 0; i--){
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      dailyTrend[localDateStr(d)] = { label: d.toLocaleDateString([], {month:'short', day:'numeric'}), sales:0, profit:0 };
+    }
+
+    sales.forEach(s => {
+      const active = s.status !== 'returned';
+      if (active && dailyTrend[s.dateISO]){
+        dailyTrend[s.dateISO].sales += (s.grand||0);
+        dailyTrend[s.dateISO].profit += (s.profit||0);
+      }
+      if (active && s.dateISO === todayStr){
+        todaySales += (s.grand||0); todayProfit += (s.profit||0); todayTx++;
+        todayCustomers.add((s.patient||'Guest') + '|' + (s.phone||''));
+      }
+      if (active && s.dateISO && s.dateISO.slice(0,7) === monthPrefix){
+        monthSales += (s.grand||0); monthProfit += (s.profit||0); monthTx++;
+        (s.items||[]).forEach(it => {
+          const revenue = (it.lineTotal != null) ? it.lineTotal : (it.retail||0) * (it.quantity||0);
+          if (!itemAgg[it.name]) itemAgg[it.name] = { name: it.name, qty:0, revenue:0, tx:0 };
+          itemAgg[it.name].qty += (it.quantity||0);
+          itemAgg[it.name].revenue += revenue;
+          itemAgg[it.name].tx += 1;
+          const comp = it.manufacturer || 'Unspecified';
+          companyAgg[comp] = (companyAgg[comp]||0) + revenue;
+        });
+      }
+      if (active && s.dateISO && s.dateISO.slice(0,7) === prevMonthPrefix){
+        prevMonthSales += (s.grand||0); prevMonthProfit += (s.profit||0);
+      }
+    });
+
+    const topSelling = Object.values(itemAgg).sort((a,b)=>b.revenue-a.revenue).slice(0,6);
+    const fastMoving  = Object.values(itemAgg).sort((a,b)=>b.tx-a.tx).slice(0,6);
+    const topCompanies = Object.entries(companyAgg)
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a,b)=>b.revenue-a.revenue).slice(0,6);
+
+    const recentSales = [...sales].sort((a,b)=> (b.datetime||'').localeCompare(a.datetime||'')).slice(0,6);
+    const recentReturns = sales.filter(s=>s.status==='returned')
+      .sort((a,b)=> (b.returnedAt||'').localeCompare(a.returnedAt||'')).slice(0,5);
+
+    const creditByCustomer = {};
+    sales.forEach(s => {
+      if (s.paymentMode === 'Credit' && s.status !== 'returned' && !s.creditSettled){
+        const key = (s.patient||'Guest') + '|' + (s.phone||'');
+        if (!creditByCustomer[key]) creditByCustomer[key] = { patient: s.patient||'Guest', phone: s.phone||'', amount:0, count:0 };
+        creditByCustomer[key].amount += (s.grand||0);
+        creditByCustomer[key].count += 1;
+      }
+    });
+    const pendingCredit = Object.values(creditByCustomer).sort((a,b)=>b.amount-a.amount);
+
+    return {
+      todaySales, todayProfit, todayTx, todayCustomers: todayCustomers.size,
+      monthSales, monthProfit, monthTx, prevMonthSales, prevMonthProfit,
+      topSelling, fastMoving, topCompanies, dailyTrend, recentSales, recentReturns, pendingCredit,
+      totalSalesCount: sales.length
+    };
+  }
+
+  function analyzeInventory(meds){
+    const LOW_STOCK_THRESHOLD = 10;
+    let expired=[], nearExpiry=[], lowStock=[], outOfStock=[];
+    let goodCount=0;
+
+    meds.forEach(m => {
+      const hasDate = m.expiryDate && !isNaN(new Date(m.expiryDate).getTime());
+      const days = hasDate ? daysUntil(m.expiryDate) : null;
+      const qty = Number(m.quantity) || 0;
+
+      if (hasDate && days < 0){
+        expired.push({ ...m, days });
+      } else if (hasDate && days <= 90){
+        nearExpiry.push({ ...m, days });
+      } else {
+        goodCount++;
+      }
+      if (qty <= 0){
+        outOfStock.push(m);
+      } else if (qty <= LOW_STOCK_THRESHOLD){
+        lowStock.push(m);
+      }
+    });
+
+    expired.sort((a,b)=>a.days-b.days);
+    nearExpiry.sort((a,b)=>a.days-b.days);
+    lowStock.sort((a,b)=>(Number(a.quantity)||0)-(Number(b.quantity)||0));
+
+    return {
+      expired, nearExpiry, lowStock, outOfStock,
+      totalBatches: meds.length,
+      goodCount
+    };
+  }
+
+  // ============================================================
+  // RENDERERS
+  // ============================================================
+  function kpiCard({icon, iconClass, label, value, delta}){
+    const deltaHtml = delta ? `<span class="kpi-delta ${delta.dir}"><i class="fa-solid fa-arrow-${delta.dir==='up'?'up':(delta.dir==='down'?'down':'right')}"></i> ${delta.text}</span>` : '';
+    return `
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon ${iconClass}"><i class="fa-solid ${icon}"></i></div>
+          ${deltaHtml}
+        </div>
+        <div class="kpi-num">${value}</div>
+        <div class="kpi-lbl">${label}</div>
+      </div>`;
+  }
+
+  function pctDelta(curr, prev){
+    if (!prev && !curr) return { dir:'flat', text:'No data' };
+    if (!prev) return { dir:'up', text:'New' };
+    const pct = ((curr - prev) / prev) * 100;
+    if (Math.abs(pct) < 1) return { dir:'flat', text:'Flat' };
+    return { dir: pct >= 0 ? 'up' : 'down', text: `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%` };
+  }
+
+  function renderKpis(sa){
+    const grid = document.getElementById('kpiGrid');
+    grid.innerHTML = [
+      kpiCard({icon:'fa-sack-dollar', iconClass:'i-sky', label:"Today's sales (PKR)", value: fmtMoney(sa.todaySales)}),
+      kpiCard({icon:'fa-chart-line', iconClass:'i-success', label:"Today's profit (PKR)", value: fmtMoney(sa.todayProfit)}),
+      kpiCard({icon:'fa-receipt', iconClass:'i-navy', label:"Today's transactions", value: sa.todayTx}),
+      kpiCard({icon:'fa-user-group', iconClass:'i-warning', label:"Today's customers", value: sa.todayCustomers}),
+      kpiCard({icon:'fa-calendar-days', iconClass:'i-sky', label:'Monthly sales (PKR)', value: fmtMoney(sa.monthSales), delta: pctDelta(sa.monthSales, sa.prevMonthSales)}),
+      kpiCard({icon:'fa-coins', iconClass:'i-success', label:'Monthly profit (PKR)', value: fmtMoney(sa.monthProfit), delta: pctDelta(sa.monthProfit, sa.prevMonthProfit)}),
+    ].join('');
+  }
+
+  let trendChartInst, compareChartInst, companyChartInst, healthChartInst;
+  function destroyCharts(){
+    [trendChartInst, compareChartInst, companyChartInst, healthChartInst].forEach(c => { if (c) c.destroy(); });
+  }
+
+  function renderCharts(sa, inv){
+    if (typeof Chart === 'undefined') return; // CDN unreachable — charts skipped, rest of dashboard still works
+    destroyCharts();
+    const navy = '#0A2540', sky = '#0ea5e9', success='#16a34a', warning='#f59e0b', danger='#dc2626', gray='#94a3b8';
+
+    // Trend (line): sales + profit, last 14 days
+    const trendDays = Object.values(sa.dailyTrend);
+    trendChartInst = new Chart(document.getElementById('trendChart'), {
+      type: 'line',
+      data: {
+        labels: trendDays.map(d=>d.label),
+        datasets: [
+          { label:'Sales', data: trendDays.map(d=>d.sales), borderColor: sky, backgroundColor:'rgba(14,165,233,.12)', fill:true, tension:.35, pointRadius:2 },
+          { label:'Profit', data: trendDays.map(d=>d.profit), borderColor: success, backgroundColor:'rgba(22,163,74,.08)', fill:true, tension:.35, pointRadius:2 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'top', labels:{ boxWidth:10, font:{size:11} } } },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#eef1f5'} }, x:{ grid:{display:false} } }
+      }
+    });
+
+    // Comparison bar: this month vs last month
+    compareChartInst = new Chart(document.getElementById('compareChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Sales', 'Profit'],
+        datasets: [
+          { label:'Last month', data:[sa.prevMonthSales, sa.prevMonthProfit], backgroundColor:'#cbd5e1', borderRadius:6 },
+          { label:'This month', data:[sa.monthSales, sa.monthProfit], backgroundColor: navy, borderRadius:6 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'top', labels:{ boxWidth:10, font:{size:11} } } },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#eef1f5'} }, x:{ grid:{display:false} } }
+      }
+    });
+
+    // Company pie
+    const companyWrap = document.getElementById('companyChartWrap');
+    if (sa.topCompanies.length === 0){
+      companyWrap.innerHTML = `<div class="legend-empty"><i class="fa-solid fa-chart-pie"></i>No sales recorded this month yet</div>`;
+    } else {
+      companyWrap.innerHTML = `<canvas id="companyChart"></canvas>`;
+      companyChartInst = new Chart(document.getElementById('companyChart'), {
+        type:'doughnut',
+        data:{
+          labels: sa.topCompanies.map(c=>c.name),
+          datasets:[{ data: sa.topCompanies.map(c=>c.revenue), backgroundColor:[navy,sky,success,warning,'#7c3aed','#0891b2'] }]
+        },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ boxWidth:9, font:{size:10.5} } } } }
+      });
+    }
+
+    // Inventory health pie
+    const healthWrap = document.getElementById('healthChartWrap');
+    if (inv.totalBatches === 0){
+      healthWrap.innerHTML = `<div class="legend-empty"><i class="fa-solid fa-boxes-stacked"></i>No batches in the Expiry Tracker yet</div>`;
+    } else {
+      healthWrap.innerHTML = `<canvas id="healthChart"></canvas>`;
+      healthChartInst = new Chart(document.getElementById('healthChart'), {
+        type:'doughnut',
+        data:{
+          labels:['Good / long term','Near expiry (≤90d)','Expired'],
+          datasets:[{ data:[inv.goodCount, inv.nearExpiry.length, inv.expired.length], backgroundColor:[success,warning,danger] }]
+        },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ boxWidth:9, font:{size:10.5} } } } }
+      });
+    }
+  }
+
+  function rankRow(i, name, sub, val){
+    return `<div class="rank-row">
+      <div class="rank-num">${i}</div>
+      <div style="min-width:0;flex:1;">
+        <div class="rank-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+        <div class="rank-sub">${escapeHtml(sub)}</div>
+      </div>
+      <div class="rank-val">${val}</div>
+    </div>`;
+  }
+
+  function emptyMini(icon, text){
+    return `<div class="empty-mini"><i class="fa-solid ${icon}"></i>${escapeHtml(text)}</div>`;
+  }
+
+  function renderInsights(sa){
+    const row = document.getElementById('insightsRow');
+    const topSellingHtml = sa.topSelling.length
+      ? sa.topSelling.map((it,i)=> rankRow(i+1, it.name, `${it.qty} sold · ${it.tx} sale(s)`, 'Rs ' + fmtMoney(it.revenue))).join('')
+      : emptyMini('fa-pills', 'No sales recorded this month yet');
+    const topCompaniesHtml = sa.topCompanies.length
+      ? sa.topCompanies.map((c,i)=> rankRow(i+1, c.name, 'Revenue this month', 'Rs ' + fmtMoney(c.revenue))).join('')
+      : emptyMini('fa-industry', 'No sales recorded this month yet');
+    const fastMovingHtml = sa.fastMoving.length
+      ? sa.fastMoving.map((it,i)=> rankRow(i+1, it.name, `${it.tx} transaction(s)`, `${it.qty} units`)).join('')
+      : emptyMini('fa-bolt', 'No sales recorded this month yet');
+
+    row.innerHTML = `
+      <div class="list-card">
+        <h5><i class="fa-solid fa-crown"></i> Top selling medicines <span class="count-badge">${sa.topSelling.length}</span></h5>
+        ${topSellingHtml}
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-industry"></i> Top companies <span class="count-badge">${sa.topCompanies.length}</span></h5>
+        ${topCompaniesHtml}
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-bolt"></i> Fast moving items <span class="count-badge">${sa.fastMoving.length}</span></h5>
+        ${fastMovingHtml}
+      </div>`;
+  }
+
+  function alertRow(name, sub, badgeText, badgeClass){
+    return `<div class="alert-row">
+      <div class="alert-dot ${badgeClass}"></div>
+      <div style="min-width:0;flex:1;">
+        <div class="alert-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+        <div class="alert-sub">${escapeHtml(sub)}</div>
+      </div>
+      <div class="alert-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
+    </div>`;
+  }
+
+  function renderAlerts(inv){
+    const row = document.getElementById('alertsRow');
+
+    const lowStockHtml = inv.lowStock.length
+      ? inv.lowStock.slice(0,6).map(m => alertRow(m.name, m.batch ? `Batch ${m.batch}` : (m.manufacturer||''), `${m.quantity} left`, 'warning')).join('')
+      : emptyMini('fa-box', 'Nothing running low');
+    const nearExpiryHtml = inv.nearExpiry.length
+      ? inv.nearExpiry.slice(0,6).map(m => alertRow(m.name, m.batch ? `Batch ${m.batch}` : (m.manufacturer||''), `${m.days}d left`, m.days<=30?'danger':'warning')).join('')
+      : emptyMini('fa-hourglass-half', 'Nothing expiring soon');
+    const expiredHtml = inv.expired.length
+      ? inv.expired.slice(0,6).map(m => alertRow(m.name, m.batch ? `Batch ${m.batch}` : (m.manufacturer||''), `${Math.abs(m.days)}d ago`, 'danger')).join('')
+      : emptyMini('fa-circle-check', 'No expired batches');
+    const outOfStockHtml = inv.outOfStock.length
+      ? inv.outOfStock.slice(0,6).map(m => alertRow(m.name, m.batch ? `Batch ${m.batch}` : (m.manufacturer||''), '0 in stock', 'danger')).join('')
+      : emptyMini('fa-circle-check', 'Nothing out of stock');
+
+    row.innerHTML = `
+      <div class="list-card">
+        <h5><i class="fa-solid fa-box" style="color:#b45309;"></i> Low stock <span class="count-badge">${inv.lowStock.length}</span></h5>
+        ${lowStockHtml}
+        <a class="foot-link" href="Expiry_Check.html">Open Expiry Tracker <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-hourglass-half" style="color:#b45309;"></i> Near expiry <span class="count-badge">${inv.nearExpiry.length}</span></h5>
+        ${nearExpiryHtml}
+        <a class="foot-link" href="Expiry_Check.html">Open Expiry Tracker <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-skull-crossbones" style="color:#dc2626;"></i> Expired <span class="count-badge">${inv.expired.length}</span></h5>
+        ${expiredHtml}
+        <a class="foot-link" href="Expiry_Check.html">Open Expiry Tracker <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-ban" style="color:#dc2626;"></i> Out of stock <span class="count-badge">${inv.outOfStock.length}</span></h5>
+        ${outOfStockHtml}
+        <a class="foot-link" href="Expiry_Check.html">Open Expiry Tracker <i class="fa-solid fa-arrow-right"></i></a>
+      </div>`;
+  }
+
+  function renderActivity(sa){
+    const row = document.getElementById('activityRow');
+
+    const recentSalesHtml = sa.recentSales.length
+      ? sa.recentSales.map(s => `
+        <div class="alert-row">
+          <div style="min-width:0;flex:1;">
+            <div class="alert-name">${escapeHtml(s.patient||'Guest')} <span class="status-pill-sm ${s.status==='returned'?'ret':'ok'}">${escapeHtml(s.status)}</span></div>
+            <div class="alert-sub">${new Date(s.datetime).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} · ${escapeHtml(s.paymentMode||'')}</div>
+          </div>
+          <div class="rank-val">Rs ${fmtMoney(s.grand)}</div>
+        </div>`).join('')
+      : emptyMini('fa-receipt', 'No sales recorded yet');
+
+    const recentReturnsHtml = sa.recentReturns.length
+      ? sa.recentReturns.map(s => `
+        <div class="alert-row">
+          <div style="min-width:0;flex:1;">
+            <div class="alert-name">${escapeHtml(s.patient||'Guest')}</div>
+            <div class="alert-sub">${s.returnedAt ? new Date(s.returnedAt).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '—'}</div>
+          </div>
+          <div class="rank-val" style="color:var(--danger);">Rs ${fmtMoney(s.grand)}</div>
+        </div>`).join('')
+      : emptyMini('fa-rotate-left', 'No returns recorded');
+
+    const pendingCreditHtml = sa.pendingCredit.length
+      ? sa.pendingCredit.slice(0,6).map(c => `
+        <div class="alert-row">
+          <div style="min-width:0;flex:1;">
+            <div class="alert-name">${escapeHtml(c.patient)}</div>
+            <div class="alert-sub">${escapeHtml(c.phone||'No phone on file')} · ${c.count} sale(s)</div>
+          </div>
+          <div class="rank-val" style="color:var(--warning);">Rs ${fmtMoney(c.amount)}</div>
+        </div>`).join('')
+      : emptyMini('fa-hand-holding-dollar', 'No pending credit — nice!');
+
+    row.innerHTML = `
+      <div class="list-card">
+        <h5><i class="fa-solid fa-receipt"></i> Recent sales <span class="count-badge">${sa.totalSalesCount}</span></h5>
+        ${recentSalesHtml}
+        <a class="foot-link" href="POS.html">Open Billing / POS <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-rotate-left"></i> Recent returns <span class="count-badge">${sa.recentReturns.length}</span></h5>
+        ${recentReturnsHtml}
+        <a class="foot-link" href="POS.html">Open Billing / POS <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="list-card">
+        <h5><i class="fa-solid fa-hand-holding-dollar"></i> Pending credit customers <span class="count-badge">${sa.pendingCredit.length}</span></h5>
+        ${pendingCreditHtml}
+        <a class="foot-link" href="POS.html">Open Billing / POS <i class="fa-solid fa-arrow-right"></i></a>
+      </div>`;
+  }
+
+  // ============================================================
+  // MAIN REFRESH
+  // ============================================================
+  function refreshDashboard(){
+    const sales = loadSales();
+    const inventory = loadInventory();
+    const demand = loadDemand();
+
+    const sa = analyzeSales(sales);
+    const inv = analyzeInventory(inventory);
+
+    renderKpis(sa);
+    renderCharts(sa, inv);
+    renderInsights(sa);
+    renderAlerts(inv);
+    renderActivity(sa);
+
+    const note = document.getElementById('dataNoteText');
+    const bits = [];
+    bits.push(`${sales.length} sale${sales.length===1?'':'s'} logged`);
+    bits.push(`${inventory.length} batch${inventory.length===1?'':'es'} tracked`);
+    if (demand.length) bits.push(`${demand.length} item${demand.length===1?'':'s'} on demand list`);
+    note.textContent = bits.join(' · ') + ' · updated ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+
+  refreshDashboard();
+
+  // Pull the latest shared data from the cloud, then re-render.
+  async function refreshFromCloud(){
+    try {
+      const [sales, inv, demandRaw] = await Promise.all([
+        KPCloud.getSales(),
+        KPCloud.getTable('MedicineTracker'),
+        KPCloud.getKV('kp_demand_autosave_v1')
+      ]);
+      if (sales) localStorage.setItem('kindPharmacy_sales_log', JSON.stringify(sales));
+      if (inv) localStorage.setItem('medicineTrackerData', JSON.stringify(inv));
+      if (demandRaw) localStorage.setItem('kp_demand_autosave_v1', demandRaw);
+      refreshDashboard();
+    } catch (e) { console.warn('Cloud refresh failed', e); }
+  }
+  refreshFromCloud();
+
+  // Re-render when data changes in another tab (e.g. a sale is completed
+  // in POS.html while this dashboard tab is open).
+  window.addEventListener('storage', (e) => {
+    if (['kindPharmacy_sales_log','medicineTrackerData','kp_demand_autosave_v1'].includes(e.key)){
+      refreshDashboard();
+    }
+  });
+  // Periodic refresh from the cloud so changes on OTHER devices show up too.
+  setInterval(refreshFromCloud, 20000);
+
+  document.getElementById('refreshBtn').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    btn.classList.add('spinning');
+    refreshDashboard();
+    setTimeout(() => btn.classList.remove('spinning'), 600);
+  });
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed', err));
+    });
+  }
+</script>
+</body>
+</html>

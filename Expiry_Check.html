@@ -1,0 +1,3050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f766e">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Expiry Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        :root{
+            --navy:#0A2540;
+            --navy-800:#0d2f52;
+            --navy-700:#123a63;
+            --sky:#0ea5e9;
+            --sky-dark:#0284c7;
+            --sky-light:#e0f2fe;
+            --white:#ffffff;
+            --bg:#f4f6f9;
+            --gray-50:#f8fafc;
+            --gray-100:#eef1f5;
+            --gray-200:#e2e8f0;
+            --gray-300:#cbd5e1;
+            --gray-500:#64748b;
+            --gray-700:#334155;
+            --text:#0f1e33;
+            --text-soft:#526073;
+            --success:#16a34a;
+            --success-light:#dcfce7;
+            --warning:#f59e0b;
+            --warning-light:#fef3c7;
+            --danger:#dc2626;
+            --danger-light:#fee2e2;
+            --radius:12px;
+            --radius-lg:16px;
+            --shadow-sm:0 1px 2px rgba(10,37,64,.06);
+            --shadow-md:0 6px 20px rgba(10,37,64,.08);
+            --shadow-lg:0 20px 48px rgba(10,37,64,.16);
+            --font:'Inter',system-ui,sans-serif;
+            --mono:'JetBrains Mono',monospace;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing:antialiased;
+        }
+
+        /* ---------- App shell (sidebar + topbar) ---------- */
+        .suite-shell{display:flex;min-height:100vh;}
+        .suite-sidebar{
+            width:252px;flex-shrink:0;background:linear-gradient(180deg,var(--navy) 0%,#071c33 100%);
+            color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;
+            z-index:300;transition:width .25s ease;overflow:hidden;
+        }
+        .suite-sidebar.collapsed{width:78px}
+        .suite-brand{display:flex;align-items:center;gap:12px;padding:22px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+        .suite-brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(155deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 4px 14px rgba(14,165,233,.4);color:#fff}
+        .suite-brand-text{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap;font-family:var(--font);}
+        .suite-brand-text span{color:var(--sky);font-weight:600}
+        .suite-sidebar.collapsed .suite-brand-text,.suite-sidebar.collapsed .suite-link span,.suite-sidebar.collapsed .suite-foot{display:none}
+        .suite-sidebar.collapsed .suite-brand{flex-direction:column;padding:16px 0;gap:10px}
+        .suite-collapse-btn{margin-left:auto;background:rgba(255,255,255,.08);border:none;color:#c9d6e5;width:26px;height:26px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:.2s;flex-shrink:0}
+        .suite-sidebar.collapsed .suite-collapse-btn{margin-left:0}
+        .suite-collapse-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+        .suite-sidebar.collapsed .suite-collapse-btn i{transform:rotate(180deg)}
+        .suite-section-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#5f7591;padding:14px 22px 6px}
+        .suite-sidebar.collapsed .suite-section-label{display:none}
+        .suite-nav{display:flex;flex-direction:column;gap:3px;padding:6px 12px 16px;flex:1;overflow-y:auto}
+        .suite-link{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:10px;color:#c9d6e5;text-decoration:none;font-size:13.5px;font-weight:600;transition:.18s;white-space:nowrap}
+        .suite-link i{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+        .suite-link:hover{background:rgba(255,255,255,.08);color:#fff}
+        .suite-link.active{background:linear-gradient(135deg,var(--sky),var(--sky-dark));color:#fff;box-shadow:0 4px 14px rgba(14,165,233,.35)}
+        .suite-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);font-size:10.5px;color:#8ea3bd;font-family:var(--mono);letter-spacing:.02em}
+        .suite-main{flex:1;margin-left:252px;display:flex;flex-direction:column;min-height:100vh;transition:margin-left .25s ease;min-width:0}
+        .suite-main.collapsed{margin-left:78px}
+        .suite-topbar{display:flex;align-items:center;gap:16px;justify-content:space-between;background:#fff;border-bottom:1px solid var(--gray-200);padding:14px 28px;position:sticky;top:0;z-index:150;flex-wrap:wrap}
+        .suite-topbar-left{display:flex;align-items:center;gap:14px;min-width:0}
+        .suite-mobile-btn{display:none;background:var(--gray-100);border:none;width:36px;height:36px;border-radius:9px;color:var(--navy);font-size:15px;cursor:pointer;flex-shrink:0}
+        .suite-topbar-title h1{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+        .suite-topbar-title p{font-size:12px;color:var(--text-soft);margin-top:1px}
+        .suite-clock{font-family:var(--mono);font-size:12.5px;color:var(--text-soft);background:var(--gray-100);padding:8px 15px;border-radius:20px}
+        .page-content{padding:24px 28px 48px;flex:1;max-width:1600px;}
+        @media(max-width:980px){
+            .suite-sidebar{transform:translateX(-100%)}
+            .suite-sidebar.mobile-open{transform:translateX(0)}
+            .suite-main{margin-left:0}
+            .suite-mobile-btn{display:flex;align-items:center;justify-content:center}
+            .page-content{padding:18px 16px 40px;}
+        }
+        @media print{.suite-sidebar,.suite-topbar{display:none!important}.suite-main{margin-left:0!important}}
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: visible;
+        }
+
+        header {
+            display: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 0;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .controls > div:first-child {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 11px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            font-family: var(--font);
+        }
+        .btn:hover{ transform: translateY(-1px); }
+
+        .btn-primary {
+            background: linear-gradient(135deg,var(--sky),var(--sky-dark));
+            color: white;
+            box-shadow: 0 4px 14px rgba(14,165,233,.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 18px rgba(14,165,233,.4);
+        }
+
+        .btn-secondary {
+            background-color: #fff;
+            color: var(--navy);
+            border: 1.5px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--gray-50);
+            border-color: var(--navy);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg,var(--warning),#d97706);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 5px 15px rgba(245,158,11,.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg,#22c55e,var(--success));
+            color: white;
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(22,163,74,.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg,var(--danger),#b91c1c);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(220,38,38,.3);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg,var(--sky),var(--sky-dark));
+            color: white;
+        }
+
+        .btn-info:hover {
+            box-shadow: 0 5px 15px rgba(14,165,233,.3);
+        }
+
+        .btn-stock {
+            background: linear-gradient(135deg,#7c3aed,#5b21b6);
+            color: white;
+        }
+
+        .btn-stock:hover {
+            box-shadow: 0 5px 15px rgba(124,58,237,.3);
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            margin: 0 2px;
+        }
+
+        .btn-entry {
+            background: linear-gradient(135deg,var(--navy-700),var(--navy));
+            color: white;
+        }
+
+        .btn-entry:hover {
+            box-shadow: 0 5px 15px rgba(10,37,64,.3);
+        }
+
+        .btn-bulk {
+            background: linear-gradient(135deg,var(--sky-dark),var(--navy-700));
+            color: white;
+        }
+
+        .btn-bulk:hover {
+            box-shadow: 0 5px 15px rgba(2,132,199,.3);
+        }
+
+        .btn-reset {
+            background-color: var(--gray-500);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background-color: var(--gray-700);
+        }
+
+        .btn-export-json {
+            background-color: var(--sky-dark);
+            color: white;
+        }
+
+        .btn-export-json:hover {
+            background-color: var(--navy-700);
+        }
+
+        .btn-import-json {
+            background: linear-gradient(135deg,#22c55e,var(--success));
+            color: white;
+        }
+
+        .btn-import-json:hover {
+            box-shadow: 0 5px 15px rgba(22,163,74,.3);
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            justify-content: flex-end;
+            margin-top: 5px;
+        }
+
+        .today-date {
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .file-status {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-size: 0.82rem; font-weight: 600; color: var(--text-soft);
+            background: var(--gray-100); border: 1px solid var(--gray-200);
+            padding: 8px 14px; border-radius: 20px;
+        }
+        .file-status.connected {
+            color: #15803d; background: var(--success-light); border-color: #bbf0cf;
+        }
+        .reconnect-banner {
+            display: none; align-items: center; justify-content: space-between; gap: 14px;
+            background: var(--warning-light); border: 1px solid #fbd894; color: #7a4e10;
+            padding: 12px 18px; border-radius: 12px; margin-top: 10px; font-size: 0.9rem; font-weight: 600;
+        }
+        .reconnect-banner.show { display: flex; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background-color: var(--navy);
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 0.88rem;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: var(--gray-50);
+        }
+
+        tr:hover {
+            background-color: var(--sky-light) !important;
+        }
+
+        .expiry-soon {
+            background-color: var(--warning-light);
+        }
+
+        .expiry-soon:hover {
+            background-color: #fde3ad;
+        }
+
+        .expired {
+            background-color: var(--danger-light);
+        }
+
+        .expired:hover {
+            background-color: #fbc7c7;
+        }
+
+        .expiry-warning {
+            background-color: #fff3e0;
+        }
+
+        .expiry-warning:hover {
+            background-color: #ffe0b2;
+        }
+
+        .entry-soon {
+            background-color: var(--sky-light);
+        }
+
+        .entry-soon:hover {
+            background-color: #bae6fd;
+        }
+
+        /* Newly added medicine highlight */
+        .newly-added {
+            animation: highlightFade 3s ease-out;
+        }
+
+        @keyframes highlightFade {
+            0% { background-color: #fff9c4; box-shadow: 0 0 10px #ffd600; }
+            70% { background-color: #fff9c4; }
+            100% { background-color: transparent; box-shadow: none; }
+        }
+
+        .status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-block;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .status-good {
+            background-color: var(--success-light);
+            color: #15803d;
+        }
+
+        .status-warning {
+            background-color: var(--warning-light);
+            color: #b45309;
+        }
+
+        .status-danger {
+            background-color: var(--danger-light);
+            color: #b91c1c;
+        }
+
+        .status-entry {
+            background-color: var(--sky-light);
+            color: var(--sky-dark);
+        }
+
+        .result-count {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-weight: 500;
+        }
+
+        .highlight {
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        .danger-highlight {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        .warning-highlight {
+            color: #b45309;
+            font-weight: 700;
+        }
+
+        .entry-highlight {
+            color: var(--sky-dark);
+            font-weight: 700;
+        }
+
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: var(--text-soft);
+            border-top: 1px solid var(--gray-200);
+            font-size: .85rem;
+        }
+
+        .summary-boxes {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .summary-box {
+            flex: 1;
+            min-width: 190px;
+            padding: 20px 22px;
+            border-radius: var(--radius-lg);
+            color: white;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: transform .2s ease;
+        }
+        .summary-box:hover{ transform: translateY(-3px); }
+
+        .summary-box h3 {
+            font-size: 1.9rem;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .summary-box p {
+            font-size: 0.85rem;
+            opacity: 0.92;
+            font-weight: 600;
+        }
+
+        .box-expired {
+            background: linear-gradient(135deg, #ef4444 0%, var(--danger) 100%);
+        }
+
+        .box-warning {
+            background: linear-gradient(135deg, #fbbf24 0%, var(--warning) 100%);
+        }
+
+        .box-soon {
+            background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+        }
+
+        .box-good {
+            background: linear-gradient(135deg, var(--navy-700) 0%, var(--navy) 100%);
+        }
+
+        .box-entry {
+            background: linear-gradient(135deg, var(--sky) 0%, var(--sky-dark) 100%);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 37, 64, 0.55);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text-soft);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: var(--danger);
+        }
+
+        .modal h2 {
+            margin-bottom: 25px;
+            color: var(--navy);
+            border-bottom: 2px solid var(--sky);
+            padding-bottom: 10px;
+            font-size: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text);
+            font-size: .85rem;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 9px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            background-color: var(--gray-50);
+            font-family: var(--font);
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--sky);
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--sky-light);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: flex-end;
+        }
+
+        .date-format-note {
+            font-size: 0.8rem;
+            color: var(--text-soft);
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Confirmation Dialog */
+        .confirmation-dialog {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 37, 64, 0.55);
+        }
+
+        .confirmation-content {
+            background-color: white;
+            margin: 20% auto;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .confirmation-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        /* Search Bar Styles */
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 16px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            background: #fff;
+            font-family: var(--font);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--sky);
+            box-shadow: 0 0 0 3px var(--sky-light);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-soft);
+        }
+
+        .clear-search-btn {
+            padding: 12px 20px;
+            background-color: #fff;
+            border: 1.5px solid var(--gray-300);
+            color: var(--navy);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: .85rem;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .clear-search-btn:hover {
+            background-color: var(--gray-50);
+            border-color: var(--navy);
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg,var(--sky),var(--sky-dark));
+            color: white;
+        }
+
+        .export-btn:hover {
+            box-shadow: 0 5px 15px rgba(14,165,233,.3);
+        }
+
+        .search-results-info {
+            font-size: 0.85rem;
+            color: var(--text-soft);
+            margin-top: 5px;
+            padding-left: 5px;
+        }
+
+        /* Excel Export Button */
+        .export-excel-btn {
+            background: linear-gradient(135deg,#22c55e,var(--success));
+            color: white;
+        }
+
+        .export-excel-btn:hover {
+            box-shadow: 0 5px 15px rgba(22,163,74,.3);
+        }
+
+        /* Statistics Section */
+        .statistics-section {
+            background-color: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .statistics-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .statistics-value {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--navy);
+        }
+
+        .statistics-label {
+            font-size: 0.82rem;
+            color: var(--text-soft);
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .statistics-cost {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--success);
+        }
+
+        /* Bulk Add Modal Specific Styles */
+        .bulk-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-family: var(--mono);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            resize: vertical;
+            margin-bottom: 15px;
+            background: var(--gray-50);
+        }
+
+        .bulk-input:focus {
+            outline: none;
+            border-color: var(--sky);
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--sky-light);
+        }
+
+        .bulk-instructions {
+            background-color: var(--sky-light);
+            padding: 15px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--navy-800);
+        }
+
+        .bulk-instructions h4 {
+            color: var(--navy);
+            margin-bottom: 10px;
+        }
+
+        .bulk-instructions ul {
+            padding-left: 20px;
+        }
+
+        .bulk-instructions li {
+            margin-bottom: 5px;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .controls > div:first-child {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .btn {
+                flex: 1;
+                min-width: 180px;
+                justify-content: center;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            th, td {
+                padding: 12px 8px;
+                font-size: 0.85rem;
+            }
+
+            .summary-boxes {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 20px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .statistics-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .statistics-item {
+                min-width: 100%;
+            }
+
+            @media (max-width: 480px) {
+                .controls > div:first-child {
+                    flex-direction: column;
+                }
+
+                .btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+<script>
+  // ================== KP CLOUD SYNC ==================
+  // PASTE YOUR APPS SCRIPT WEB APP URL HERE (same URL in every file)
+  const KP_CLOUD_URL = 'https://script.google.com/macros/s/AKfycbylNU6aq7mG1-fT5pbsPBcybJu-gIdnur6Nk4n1TmiQYuw29goMUEz4AWGFXSxsRyYyTw/exec';
+
+  const KPCloud = (() => {
+    async function get(action, params = {}) {
+      const qs = new URLSearchParams({ action, ...params }).toString();
+      const res = await fetch(`${KP_CLOUD_URL}?${qs}`);
+      return res.json();
+    }
+    async function post(body) {
+      const res = await fetch(KP_CLOUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+    return {
+      getCatalog: () => get('catalog').then(r => r.ok ? r.items : null),
+      saveCatalog: (items) => post({ action: 'saveCatalog', items }),
+      getSales: () => get('sales').then(r => r.ok ? r.sales : null),
+      addSale: (sale) => post({ action: 'addSale', sale }),
+      updateSale: (id, patch) => post({ action: 'updateSale', id, patch }),
+      getKV: (key) => get('kv', { key }).then(r => r.ok ? r.value : null),
+      setKV: (key, value) => post({ action: 'setKV', key, value }),
+      getTable: (name) => get('table', { name }).then(r => r.ok ? r.items : null),
+      saveTable: (name, items) => post({ action: 'saveTable', name, items })
+    };
+  })();
+  // =====================================================
+</script>
+
+<div class="suite-shell">
+  <aside class="suite-sidebar" id="appSidebar">
+    <div class="suite-brand">
+      <div class="suite-brand-mark"><i class="fa-solid fa-kit-medical"></i></div>
+      <div class="suite-brand-text">Kind <span>Pharmacy</span></div>
+      <button class="suite-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar"><i class="fa-solid fa-angles-left"></i></button>
+    </div>
+    <div class="suite-section-label">Suite</div>
+    <nav class="suite-nav">
+      <a href="index.html" class="suite-link"><i class="fa-solid fa-grip"></i><span>Dashboard</span></a>
+      <a href="POS.html" class="suite-link"><i class="fa-solid fa-cash-register"></i><span>Billing / POS</span></a>
+      <a href="Kind_Pharmacy_Demand_Creator.html" class="suite-link"><i class="fa-solid fa-clipboard-list"></i><span>Demand Creator</span></a>
+      <a href="Expiry_Check.html" class="suite-link active"><i class="fa-solid fa-hourglass-half"></i><span>Expiry Tracker</span></a>
+      <a href="New_Stock_Expiry_Check.html" class="suite-link"><i class="fa-solid fa-boxes-packing"></i><span>New Stock Expiry Check</span></a>
+      <a href="Reports.html" class="suite-link"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+    </nav>
+    <div class="suite-foot" id="sidebarClock">—</div>
+  </aside>
+
+  <div class="suite-main" id="mainWrap">
+    <header class="suite-topbar">
+      <div class="suite-topbar-left">
+        <button class="suite-mobile-btn" id="mobileMenuBtn"><i class="fa-solid fa-bars"></i></button>
+        <div class="suite-topbar-title">
+          <h1>Expiry Tracker</h1>
+          <p>Track and monitor medicine expiration dates</p>
+        </div>
+      </div>
+      <span class="suite-clock" id="liveClock">—</span>
+    </header>
+
+    <main class="page-content">
+    <div class="container">
+        <div class="content">
+            <div class="summary-boxes">
+                <div class="summary-box box-expired">
+                    <h3 id="expiredCount">0</h3>
+                    <p>Expired Medicines</p>
+                </div>
+                <div class="summary-box box-warning">
+                    <h3 id="oneMonthCount">0</h3>
+                    <p>1 Month Expiry</p>
+                </div>
+                <div class="summary-box box-soon">
+                    <h3 id="threeMonthCount">0</h3>
+                    <p>3 Month Expiry</p>
+                </div>
+                <div class="summary-box box-good">
+                    <h3 id="sixMonthCount">0</h3>
+                    <p>6 Month Expiry</p>
+                </div>
+                <div class="summary-box box-entry">
+                    <h3 id="entrySoonCount">0</h3>
+                    <p>Entering 6-Month Period</p>
+                </div>
+            </div>
+            
+            <!-- Statistics Section -->
+            <div class="statistics-section" id="statisticsSection">
+                <div class="statistics-item">
+                    <div class="statistics-value" id="totalItems">0</div>
+                    <div class="statistics-label">Total Items</div>
+                </div>
+                <div class="statistics-item">
+                    <div class="statistics-cost" id="totalCost">0.00</div>
+                    <div class="statistics-label">Total Cost</div>
+                </div>
+                <div class="statistics-item">
+                    <div class="statistics-value" id="activeItems">0</div>
+                    <div class="statistics-label">Active Items</div>
+                </div>
+                <div class="statistics-item">
+                    <div class="statistics-value" id="expiringSoonItems">0</div>
+                    <div class="statistics-label">Expiring Soon (≤3 Months)</div>
+                </div>
+                <div class="statistics-item">
+                    <div class="statistics-value" id="reorderItems" style="color:#7c3aed;">0</div>
+                    <div class="statistics-label">Reorder Alerts</div>
+                </div>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search medicines by name, manufacturer or batch number...">
+                    <i class="fas fa-search search-icon"></i>
+                    <div class="search-results-info" id="searchResultsInfo"></div>
+                </div>
+                <button class="clear-search-btn" id="clearSearchBtn">
+                    <i class="fas fa-times"></i> Clear Search
+                </button>
+            </div>
+            
+            <div class="controls">
+                <div>
+                    <button class="btn btn-primary" id="sixMonthBtn">
+                        <i class="fas fa-filter"></i> Show 6 Months Expiry
+                    </button>
+                    <button class="btn btn-warning" id="threeMonthBtn">
+                        <i class="fas fa-exclamation-triangle"></i> Show 3 Months Expiry
+                    </button>
+                    <button class="btn btn-danger" id="oneMonthBtn">
+                        <i class="fas fa-exclamation-circle"></i> Show 1 Month Expiry
+                    </button>
+                    <button class="btn btn-secondary" id="expiredBtn">
+                        <i class="fas fa-skull-crossbones"></i> Show Expired
+                    </button>
+                    <button class="btn btn-entry" id="entrySoonBtn">
+                        <i class="fas fa-hourglass-half"></i> Show Entering 6-Month
+                    </button>
+                    <button class="btn btn-stock" id="reorderBtn">
+                        <i class="fas fa-triangle-exclamation"></i> Show Reorder Alerts
+                    </button>
+                    <button class="btn btn-secondary" id="showAllBtn">
+                        <i class="fas fa-list"></i> Show All
+                    </button>
+                    <button class="btn btn-info" id="monthFilterBtn">
+                        <i class="fas fa-calendar-alt"></i> Filter by Month
+                    </button>
+                    <button class="btn btn-stock" id="viewLedgerBtn">
+                        <i class="fas fa-clipboard-list"></i> Stock Ledger
+                    </button>
+                    <button class="btn btn-success" id="addMedicineBtn">
+                        <i class="fas fa-plus-circle"></i> Add Single
+                    </button>
+                    <button class="btn btn-bulk" id="bulkAddBtn">
+                        <i class="fas fa-plus-square"></i> Bulk Add
+                    </button>
+                    <button class="btn export-excel-btn" id="exportExcelBtn">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                    <button class="btn btn-export-json" id="exportJsonBtn" title="Save all medicines to a file you can load on any computer">
+                        <i class="fas fa-file-export"></i> Export Data
+                    </button>
+                    <button class="btn btn-import-json" id="importJsonBtn" title="Load medicines from a previously exported file">
+                        <i class="fas fa-file-import"></i> Import Data
+                    </button>
+                    <input type="file" id="importJsonInput" accept=".json" style="display:none;">
+                    <button class="btn btn-secondary" id="sortBtn">
+                        <i class="fas fa-sort-amount-down"></i> Sort by Days (High to Low)
+                    </button>
+                    <button class="btn btn-print" id="printBtn">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                    <button class="btn btn-reset" id="resetDataBtn" title="Clear all saved data and reload defaults">
+                        <i class="fas fa-redo"></i> Reset to Defaults
+                    </button>
+                    <button class="btn" id="btnConnectFile" style="background:#37474f;color:#fff;" title="Auto-save this data to a JSON file in your chosen folder">
+                        <i class="fas fa-link"></i> Connect Data File
+                    </button>
+                    <span class="file-status disconnected" id="fileStatus"><i class="fas fa-plug"></i> Autosave: browser only</span>
+                </div>
+                <div class="reconnect-banner" id="reconnectBanner">
+                    <span><i class="fas fa-exclamation-triangle"></i> Your data file needs to be reconnected to resume autosave. Your data is still safe in this browser.</span>
+                    <button class="btn btn-primary" id="btnReconnectFile">Reconnect</button>
+                </div>
+                <div class="date-filter">
+                    <span>Today's Date: </span>
+                    <span class="today-date" id="currentDate"></span>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="medicineTable">
+                    <thead>
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Manufacturer</th>
+                            <th>Batch No.</th>
+                            <th>Expiry Date</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Days Remaining</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medicineTableBody">
+                        <!-- Medicine data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="result-count" id="resultCount">
+                Showing <span class="highlight" id="count">0</span> medicines out of <span class="highlight" id="total">0</span> total
+            </div>
+        </div>
+        
+        <footer>
+            <p>Medicine Expiry Tracker &copy; 2024 | Always check expiry dates before use</p>
+        </footer>
+    </div>
+    </main>
+  </div>
+</div>
+    
+    <!-- Month Filter Modal -->
+    <div id="monthFilterModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="monthModalClose">&times;</span>
+            <h2>Filter by Expiry Month</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="monthSelect">Month</label>
+                    <select id="monthSelect">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="yearSelect">Year</label>
+                    <select id="yearSelect"></select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelMonthFilterBtn">Cancel</button>
+                <button class="btn btn-primary" id="applyMonthFilterBtn">Apply Filter</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Medicine Modal -->
+    <div id="medicineModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Add New Medicine</h2>
+            <form id="medicineForm">
+                <div class="form-group">
+                    <label for="medicineName">Medicine Name *</label>
+                    <input type="text" id="medicineName" required placeholder="Enter medicine name">
+                </div>
+                <div class="form-group">
+                    <label for="manufacturer">Manufacturer</label>
+                    <input type="text" id="manufacturer" placeholder="Enter manufacturer name">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="batchNo">Batch No.</label>
+                        <input type="text" id="batchNo" placeholder="Enter batch number">
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity *</label>
+                        <input type="number" id="quantity" required placeholder="Enter quantity" min="1" value="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expiryDate">Expiry Date *</label>
+                        <input type="text" id="expiryDate" required placeholder="DD/MM/YYYY (e.g., 01/01/2026)">
+                        <div class="date-format-note">Format: DD/MM/YYYY</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="rate">Rate *</label>
+                        <input type="number" id="rate" required placeholder="Enter rate" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reorderLevel">Reorder level <span style="font-weight:400;color:#777;">(get a low-stock alert at or below this quantity)</span></label>
+                    <input type="number" id="reorderLevel" placeholder="e.g. 10" min="0" value="10">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Stock In / Stock Out Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+            <span class="close" id="stockModalClose">&times;</span>
+            <h2><i class="fas fa-boxes-stacked" style="color:#7c3aed"></i> Stock In / Stock Out</h2>
+            <p id="stockModalMedName" style="font-weight:700;margin-bottom:14px;color:var(--navy);"></p>
+            <p style="font-size:0.85rem;color:#666;margin-bottom:14px;">Current quantity: <strong id="stockModalCurrentQty">0</strong></p>
+            <form id="stockForm">
+                <div class="form-group">
+                    <label>Movement type</label>
+                    <div style="display:flex;gap:10px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-weight:600;font-size:0.9rem;">
+                            <input type="radio" name="stockDirection" value="in" checked style="width:auto;"> Stock In (+)
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-weight:600;font-size:0.9rem;">
+                            <input type="radio" name="stockDirection" value="out" style="width:auto;"> Stock Out (−)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="stockQty">Quantity *</label>
+                    <input type="number" id="stockQty" required min="0.01" step="1" placeholder="Enter quantity">
+                </div>
+                <div class="form-group">
+                    <label for="stockReason">Reason</label>
+                    <select id="stockReason">
+                        <option value="Purchase received">Purchase received</option>
+                        <option value="Sold / dispensed">Sold / dispensed</option>
+                        <option value="Damaged / expired write-off">Damaged / expired write-off</option>
+                        <option value="Physical count adjustment">Physical count adjustment</option>
+                        <option value="Return to supplier">Return to supplier</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stockNote">Note (optional)</label>
+                    <input type="text" id="stockNote" placeholder="e.g. Invoice #1234">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="stockCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="stockSaveBtn"><i class="fas fa-check"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock Ledger Modal -->
+    <div id="ledgerModal" class="modal">
+        <div class="modal-content" style="max-width:820px;">
+            <span class="close" id="ledgerModalClose">&times;</span>
+            <h2><i class="fas fa-clipboard-list" style="color:#7c3aed"></i> Stock Movement Ledger</h2>
+            <div class="search-box" style="margin-bottom:14px;">
+                <input type="text" class="search-input" id="ledgerSearchInput" placeholder="Filter by medicine name...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            <div style="max-height:420px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                    <thead style="position:sticky;top:0;background:#f8fafc;">
+                        <tr>
+                            <th style="text-align:left;padding:9px 12px;">Date</th>
+                            <th style="text-align:left;padding:9px 12px;">Medicine</th>
+                            <th style="text-align:center;padding:9px 12px;">Type</th>
+                            <th style="text-align:right;padding:9px 12px;">Qty</th>
+                            <th style="text-align:right;padding:9px 12px;">New balance</th>
+                            <th style="text-align:left;padding:9px 12px;">Reason</th>
+                            <th style="text-align:left;padding:9px 12px;">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="bulkModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="bulkModalClose">&times;</span>
+            <h2>Bulk Add Medicines</h2>
+            <div class="bulk-instructions">
+                <h4>Instructions:</h4>
+                <p>Enter multiple medicines in the following format (one per line):</p>
+                <ul>
+                    <li><strong>Format:</strong> Medicine Name, Manufacturer, Batch No., Expiry Date (DD/MM/YYYY), Quantity, Rate</li>
+                    <li><strong>Example:</strong> Paracetamol 500mg, Hilton Pharma, BATCH001, 15/12/2024, 100, 5.50</li>
+                    <li>Separate each field with a comma (,)</li>
+                    <li>Make sure expiry date is in DD/MM/YYYY format</li>
+                </ul>
+            </div>
+            <div class="form-group">
+                <label for="bulkInput">Medicines Data:</label>
+                <textarea class="bulk-input" id="bulkInput" placeholder="Enter medicine data here, one per line..."></textarea>
+                <div class="date-format-note">Each line should contain: Name, Manufacturer, Batch, Expiry Date, Quantity, Rate</div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="cancelBulkBtn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBulkBtn">Add Medicines</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Dialog -->
+    <div id="deleteConfirmation" class="confirmation-dialog">
+        <div class="confirmation-content">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+            <p id="deleteMessage">Are you sure you want to delete this medicine?</p>
+            <div class="confirmation-actions">
+                <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import JSON Confirmation Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+            <span class="close" id="importModalClose">&times;</span>
+            <h2><i class="fas fa-file-import" style="color:#16a34a"></i> Import Medicine Data</h2>
+            <div id="importSummary" style="background:#f8f9fa;border-radius:8px;padding:16px;margin-bottom:20px;font-size:0.95rem;line-height:1.7;">
+                <!-- filled by JS -->
+            </div>
+            <p style="color:#555;margin-bottom:20px;font-size:0.95rem;">
+                How would you like to import this data?
+            </p>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;border:2px solid #e0e0e0;border-radius:8px;transition:border-color 0.2s;" id="mergeOption">
+                    <input type="radio" name="importMode" value="merge" checked style="margin-top:3px;accent-color:#0284c7;">
+                    <div>
+                        <strong>Merge</strong> — Add imported medicines to your existing list<br>
+                        <span style="font-size:0.85rem;color:#777;">Duplicate entries may appear if you import the same file twice.</span>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;border:2px solid #e0e0e0;border-radius:8px;transition:border-color 0.2s;" id="replaceOption">
+                    <input type="radio" name="importMode" value="replace" style="margin-top:3px;accent-color:#f44336;">
+                    <div>
+                        <strong>Replace</strong> — Discard current list and load only the imported data<br>
+                        <span style="font-size:0.85rem;color:#c62828;">⚠️ Your current medicine list will be lost.</span>
+                    </div>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelImportBtn">Cancel</button>
+                <button class="btn btn-import-json" id="confirmImportBtn"><i class="fas fa-file-import"></i> Import</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get current date from system
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Format and display current date
+        const formatDate = (date) => {
+            if (!date || isNaN(date.getTime())) return 'Invalid Date';
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        };
+        
+        const todayFormatted = formatDate(today);
+        document.getElementById('currentDate').textContent = todayFormatted;
+        
+        // Default manufacturer for legacy data
+        const DEFAULT_MANUFACTURER = 'Unknown';
+        
+        // Create some medicines with manufacturer for testing
+        const createTestMedicines = () => {
+            const testMedicines = [];
+            
+            // Create dates relative to current date
+            const nextWeek = new Date(today);
+            nextWeek.setDate(today.getDate() + 7);
+            
+            const nextMonth = new Date(today);
+            nextMonth.setMonth(today.getMonth() + 1);
+            
+            const threeMonths = new Date(today);
+            threeMonths.setMonth(today.getMonth() + 3);
+            
+            const sixMonths = new Date(today);
+            sixMonths.setMonth(today.getMonth() + 6);
+            
+            const expiredDate = new Date(today);
+            expiredDate.setMonth(today.getMonth() - 1);
+            
+            const sevenMonths = new Date(today);
+            sevenMonths.setMonth(today.getMonth() + 7);
+            
+            const sixMonthsPlus15 = new Date(today);
+            sixMonthsPlus15.setMonth(today.getMonth() + 6);
+            sixMonthsPlus15.setDate(today.getDate() + 15);
+            
+            const sixMonthsPlus25 = new Date(today);
+            sixMonthsPlus25.setMonth(today.getMonth() + 6);
+            sixMonthsPlus25.setDate(today.getDate() + 25);
+            
+            // Format dates as DD/MM/YYYY
+            const formatDateForData = (date) => {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            };
+            
+            testMedicines.push(
+               
+  ["Starc 60Mg Tab", "GETZ PHARMA", "F33005", "01/03/2027", "3", "187"],
+  ["Starc 90Mg Tab", "GETZ PHARMA", "F34004", "01/03/2027", "1", "312.38"],
+  ["Starc 120Mg Tab", "GETZ PHARMA", "F35002", "01/10/2026", "1", "196.35"]
+            );
+            
+            return testMedicines;
+        };
+        
+        // Original medicine data (legacy format: name, manufacturer, batch, expiry, qty, rate)
+        const originalMedicineData = [];
+        
+        // Combine test medicines with original data (normalize to include manufacturer)
+        const testMedicines = createTestMedicines(); // Already 6 fields
+        const legacyMedicines = originalMedicineData.map(item => {
+            // item is [name, batch, expiry, qty, rate] (5 fields)
+            return [item[0], DEFAULT_MANUFACTURER, item[1], item[2], item[3], item[4]];
+        });
+        const defaultMedicineData = [...testMedicines, ...legacyMedicines];
+        
+        // DOM Elements
+        const tableBody = document.getElementById('medicineTableBody');
+        const sixMonthBtn = document.getElementById('sixMonthBtn');
+        const threeMonthBtn = document.getElementById('threeMonthBtn');
+        const oneMonthBtn = document.getElementById('oneMonthBtn');
+        const expiredBtn = document.getElementById('expiredBtn');
+        const entrySoonBtn = document.getElementById('entrySoonBtn');
+        const showAllBtn = document.getElementById('showAllBtn');
+        const addMedicineBtn = document.getElementById('addMedicineBtn');
+        const bulkAddBtn = document.getElementById('bulkAddBtn');
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        const printBtn = document.getElementById('printBtn');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const sortBtn = document.getElementById('sortBtn');
+        const monthFilterBtn = document.getElementById('monthFilterBtn');
+        const monthFilterModal = document.getElementById('monthFilterModal');
+        const monthSelect = document.getElementById('monthSelect');
+        const yearSelect = document.getElementById('yearSelect');
+        const applyMonthFilterBtn = document.getElementById('applyMonthFilterBtn');
+        const cancelMonthFilterBtn = document.getElementById('cancelMonthFilterBtn');
+        const monthModalClose = document.getElementById('monthModalClose');
+        
+        // Statistics elements
+        const totalItemsElement = document.getElementById('totalItems');
+        const totalCostElement = document.getElementById('totalCost');
+        const activeItemsElement = document.getElementById('activeItems');
+        const expiringSoonItemsElement = document.getElementById('expiringSoonItems');
+        const reorderItemsElement = document.getElementById('reorderItems');
+        const expiredCountElement = document.getElementById('expiredCount');
+        const oneMonthCountElement = document.getElementById('oneMonthCount');
+        const threeMonthCountElement = document.getElementById('threeMonthCount');
+        const sixMonthCountElement = document.getElementById('sixMonthCount');
+        const entrySoonCountElement = document.getElementById('entrySoonCount');
+        const countElement = document.getElementById('count');
+        const totalElement = document.getElementById('total');
+        const searchResultsInfo = document.getElementById('searchResultsInfo');
+        
+        // Store all medicines
+        let allMedicines = [];
+        let filteredMedicines = [];
+        let stats = { expired: 0, oneMonth: 0, threeMonth: 0, sixMonth: 0, future: 0, entrySoon: 0, total: 0 };
+        let totalCost = 0, totalItems = 0, activeItems = 0, expiringSoonItems = 0;
+        
+        // Variables for editing and deleting
+        let currentEditingId = null, currentDeletingId = null, isEditing = false;
+        
+        // Search, filter, sort state
+        let currentSearchTerm = '';
+        let currentFilter = 'all'; // 'all', 'sixmonths', 'threemonths', 'onemonth', 'expired', 'entrysoon', 'month'
+        let currentSort = 'expiry-asc'; // 'expiry-asc' or 'days-desc'
+        
+        // Month filter state
+        let selectedMonth = null;
+        let selectedYear = null;
+        
+        // Set to track newly added medicine IDs for highlighting
+        let newlyAddedIds = new Set();
+        
+        // Parse date string to Date object
+        function parseDate(dateStr) {
+            if (!dateStr || dateStr.trim() === '') return null;
+            dateStr = dateStr.trim();
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const year = parseInt(parts[2], 10);
+                    return new Date(year, month, day);
+                }
+            }
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const year = parseInt(parts[2], 10);
+                    return new Date(year, month, day);
+                }
+            }
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? null : date;
+        }
+        
+        // Update medicine status
+        function updateMedicineStatus(medicine) {
+            if (!medicine.expiryDate || isNaN(medicine.expiryDate.getTime())) {
+                medicine.status = 'Invalid Date';
+                medicine.daysRemaining = null;
+                medicine.notificationStatus = 'invalid';
+                return;
+            }
+            const expiryDate = new Date(medicine.expiryDate);
+            expiryDate.setHours(0, 0, 0, 0);
+            const timeDiff = expiryDate.getTime() - today.getTime();
+            const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            medicine.daysRemaining = daysRemaining;
+            
+            if (daysRemaining < 0) {
+                medicine.status = 'Expired';
+            } else if (daysRemaining <= 30) {
+                medicine.status = 'Expiring in 1 Month';
+            } else if (daysRemaining <= 90) {
+                medicine.status = 'Expiring in 3 Months';
+            } else if (daysRemaining <= 180) {
+                medicine.status = 'Expiring in 6 Months';
+            } else if (daysRemaining <= 210) {
+                medicine.status = 'Entering 6-Month Period Soon';
+            } else {
+                medicine.status = 'Good (Long Term)';
+            }
+        }
+        
+        // Calculate statistics
+        function calculateStatistics() {
+            stats.total = allMedicines.length;
+            stats.expired = stats.oneMonth = stats.threeMonth = stats.sixMonth = stats.future = stats.entrySoon = 0;
+            totalCost = totalItems = activeItems = expiringSoonItems = 0;
+            let reorderCount = 0;
+
+            allMedicines.forEach(medicine => {
+                const reorderLevel = (medicine.reorderLevel != null) ? medicine.reorderLevel : 10;
+                if (medicine.quantity <= reorderLevel) reorderCount++;
+
+                if (!medicine.expiryDate || isNaN(medicine.expiryDate.getTime())) return;
+                const daysRemaining = medicine.daysRemaining;
+                totalCost += medicine.totalCost;
+                totalItems += medicine.quantity;
+                
+                if (daysRemaining < 0) {
+                    stats.expired++;
+                } else {
+                    activeItems += medicine.quantity;
+                    if (daysRemaining <= 30) {
+                        stats.oneMonth++;
+                        expiringSoonItems += medicine.quantity;
+                    } else if (daysRemaining <= 90) {
+                        stats.threeMonth++;
+                        expiringSoonItems += medicine.quantity;
+                    } else if (daysRemaining <= 180) {
+                        stats.sixMonth++;
+                    } else if (daysRemaining <= 210) {
+                        stats.entrySoon++;
+                    } else {
+                        stats.future++;
+                    }
+                }
+            });
+            
+            expiredCountElement.textContent = stats.expired;
+            oneMonthCountElement.textContent = stats.oneMonth;
+            threeMonthCountElement.textContent = stats.threeMonth;
+            sixMonthCountElement.textContent = stats.sixMonth;
+            entrySoonCountElement.textContent = stats.entrySoon;
+            totalItemsElement.textContent = totalItems;
+            totalCostElement.textContent = totalCost.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            activeItemsElement.textContent = activeItems;
+            expiringSoonItemsElement.textContent = expiringSoonItems;
+            reorderItemsElement.textContent = reorderCount;
+        }
+        
+        // Apply filter, search, and sort
+        // ---- Typo-tolerant search scoring (Levenshtein-based) ----
+        // Used to rank search matches: exact substrings score highest,
+        // multi-word "all tokens present" scores next, and a bounded
+        // edit-distance fallback catches typos like "panadl" -> "Panadol".
+        function levenshtein(a, b) {
+            a = (a||'').toLowerCase(); b = (b||'').toLowerCase();
+            const m = a.length, n = b.length;
+            if (!m) return n;
+            if (!n) return m;
+            let prev = new Array(n+1);
+            for (let j=0;j<=n;j++) prev[j] = j;
+            for (let i=1;i<=m;i++){
+                const cur = [i];
+                for (let j=1;j<=n;j++){
+                    const cost = a[i-1] === b[j-1] ? 0 : 1;
+                    cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost);
+                }
+                prev = cur;
+            }
+            return prev[n];
+        }
+        function fieldMatchScore(text, query) {
+            if (!text) return -1;
+            text = String(text).toLowerCase(); query = (query||'').toLowerCase();
+            if (!query) return -1;
+            const idx = text.indexOf(query);
+            if (idx !== -1) {
+                const wordStart = idx === 0 || /[\s,()\-\/]/.test(text[idx-1]);
+                return 100 - Math.min(idx, 30) + (wordStart ? 20 : 0);
+            }
+            const qTokens = query.split(/\s+/).filter(Boolean);
+            if (qTokens.length > 1 && qTokens.every(t => text.includes(t))) return 70;
+            const words = text.split(/[\s,()\-\/]+/).filter(Boolean);
+            let bestDist = Infinity;
+            words.forEach(w => {
+                let d = levenshtein(query, w);
+                if (w.length > query.length) d = Math.min(d, levenshtein(query, w.slice(0, query.length)));
+                if (d < bestDist) bestDist = d;
+            });
+            const maxDist = query.length <= 4 ? 1 : (query.length <= 7 ? 2 : 3);
+            if (bestDist <= maxDist) return 40 - bestDist * 10;
+            return -1;
+        }
+
+        function applyFilterAndSearch() {
+            let filtered = allMedicines;
+            
+            // Apply filter based on currentFilter
+            if (currentFilter === 'sixmonths') {
+                filtered = filtered.filter(medicine => 
+                    medicine.expiryDate && !isNaN(medicine.expiryDate.getTime()) && 
+                    medicine.daysRemaining > 0 && medicine.daysRemaining <= 180);
+            } else if (currentFilter === 'threemonths') {
+                filtered = filtered.filter(medicine => 
+                    medicine.expiryDate && !isNaN(medicine.expiryDate.getTime()) && 
+                    medicine.daysRemaining > 0 && medicine.daysRemaining <= 90);
+            } else if (currentFilter === 'onemonth') {
+                filtered = filtered.filter(medicine => 
+                    medicine.expiryDate && !isNaN(medicine.expiryDate.getTime()) && 
+                    medicine.daysRemaining > 0 && medicine.daysRemaining <= 30);
+            } else if (currentFilter === 'expired') {
+                filtered = filtered.filter(medicine => 
+                    medicine.expiryDate && !isNaN(medicine.expiryDate.getTime()) && medicine.daysRemaining < 0);
+            } else if (currentFilter === 'entrysoon') {
+                filtered = filtered.filter(medicine => 
+                    medicine.expiryDate && !isNaN(medicine.expiryDate.getTime()) && 
+                    medicine.daysRemaining > 180 && medicine.daysRemaining <= 210);
+            } else if (currentFilter === 'reorder') {
+                filtered = filtered.filter(medicine => {
+                    const reorderLevel = (medicine.reorderLevel != null) ? medicine.reorderLevel : 10;
+                    return medicine.quantity <= reorderLevel;
+                });
+            } else if (currentFilter === 'month' && selectedMonth !== null && selectedYear !== null) {
+                filtered = filtered.filter(medicine => {
+                    if (!medicine.expiryDate || isNaN(medicine.expiryDate.getTime())) return false;
+                    const month = medicine.expiryDate.getMonth() + 1;
+                    const year = medicine.expiryDate.getFullYear();
+                    return month === selectedMonth && year === selectedYear;
+                });
+            }
+            
+            // Apply search — ranked, typo-tolerant match across name,
+            // manufacturer and batch number (e.g. "panadl" still finds
+            // "Panadol", and closer matches sort first).
+            let searchScores = null;
+            if (currentSearchTerm) {
+                searchScores = new Map();
+                filtered = filtered.filter(medicine => {
+                    const nameScore = fieldMatchScore(medicine.name, currentSearchTerm) * 3;
+                    const manuScore = fieldMatchScore(medicine.manufacturer, currentSearchTerm) * 2;
+                    const batchScore = fieldMatchScore(medicine.batch, currentSearchTerm);
+                    const best = Math.max(nameScore, manuScore, batchScore);
+                    if (best > -1) { searchScores.set(medicine.id, best); return true; }
+                    return false;
+                });
+            }
+            
+            // Apply sorting
+            if (currentSort === 'expiry-asc') {
+                filtered.sort((a, b) => {
+                    if (!a.expiryDate || !b.expiryDate) return 0;
+                    return a.expiryDate.getTime() - b.expiryDate.getTime();
+                });
+            } else if (currentSort === 'days-desc') {
+                filtered.sort((a, b) => {
+                    if (a.daysRemaining === null || a.daysRemaining === undefined) return 1;
+                    if (b.daysRemaining === null || b.daysRemaining === undefined) return -1;
+                    return b.daysRemaining - a.daysRemaining;
+                });
+            }
+
+            // While actively searching, show the closest matches first —
+            // this takes priority over the chosen sort order above.
+            if (searchScores) {
+                filtered.sort((a, b) => (searchScores.get(b.id)||0) - (searchScores.get(a.id)||0));
+            }
+            
+            filteredMedicines = filtered;
+            displayMedicines(filteredMedicines);
+            updateResultCount(filteredMedicines.length, allMedicines.length);
+            
+            if (currentSearchTerm) {
+                searchResultsInfo.innerHTML = `<i class="fas fa-info-circle"></i> Showing ${filteredMedicines.length} medicine(s) containing "<strong>${currentSearchTerm}</strong>"`;
+                searchResultsInfo.style.display = 'block';
+            } else {
+                searchResultsInfo.style.display = 'none';
+            }
+            
+            // Apply highlights to newly added rows
+            applyHighlights();
+        }
+        
+        // Display medicines in table
+        function displayMedicines(medicines) {
+            tableBody.innerHTML = '';
+            if (medicines.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                    No medicines found matching your criteria</td></tr>`;
+                return;
+            }
+            
+            medicines.forEach(medicine => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', medicine.id);
+                
+                if (medicine.status === 'Expired') row.classList.add('expired');
+                else if (medicine.status === 'Expiring in 1 Month') row.classList.add('expiry-warning');
+                else if (medicine.status === 'Expiring in 3 Months' || medicine.status === 'Expiring in 6 Months') row.classList.add('expiry-soon');
+                else if (medicine.status === 'Entering 6-Month Period Soon') row.classList.add('entry-soon');
+                
+                if (newlyAddedIds.has(medicine.id)) row.classList.add('newly-added');
+                
+                let statusClass = 'status-good';
+                if (medicine.status === 'Expiring in 1 Month' || medicine.status === 'Expiring in 3 Months' || medicine.status === 'Expiring in 6 Months') statusClass = 'status-warning';
+                else if (medicine.status === 'Expired' || medicine.status === 'Invalid Date') statusClass = 'status-danger';
+                else if (medicine.status === 'Entering 6-Month Period Soon') statusClass = 'status-entry';
+                
+                let expiryDisplay = 'Invalid Date';
+                if (medicine.expiryDate && !isNaN(medicine.expiryDate.getTime())) expiryDisplay = formatDate(medicine.expiryDate);
+                
+                let daysDisplay = 'N/A';
+                if (medicine.daysRemaining !== null && medicine.daysRemaining !== undefined) {
+                    if (medicine.daysRemaining > 0) daysDisplay = medicine.daysRemaining + ' days';
+                    else if (medicine.daysRemaining < 0) daysDisplay = '<span style="color:#c62828">Expired ' + Math.abs(medicine.daysRemaining) + ' days ago</span>';
+                    else daysDisplay = '<span style="color:#ef6c00">Expires today</span>';
+                }
+                
+                const reorderLevel = (medicine.reorderLevel != null) ? medicine.reorderLevel : 10;
+                const lowStock = medicine.quantity <= reorderLevel;
+                const qtyDisplay = lowStock
+                    ? `${medicine.quantity} <span class="status status-warning" style="margin-left:4px;font-size:10px;padding:2px 7px;" title="At or below reorder level (${reorderLevel})">Reorder</span>`
+                    : medicine.quantity;
+
+                row.innerHTML = `
+                    <td><strong>${medicine.name}</strong></td>
+                    <td>${medicine.manufacturer || '-'}</td>
+                    <td>${medicine.batch || '-'}</td>
+                    <td>${expiryDisplay}</td>
+                    <td>${qtyDisplay}</td>
+                    <td>${medicine.rate.toFixed(2)}</td>
+                    <td>${medicine.totalCost.toFixed(2)}</td>
+                    <td><span class="status ${statusClass}">${medicine.status}</span></td>
+                    <td>${daysDisplay}</td>
+                    <td>
+                        <button class="btn btn-action btn-stock stock-btn" data-id="${medicine.id}" title="Record stock in/out"><i class="fas fa-boxes-stacked"></i> Stock</button>
+                        <button class="btn btn-action btn-warning edit-btn" data-id="${medicine.id}"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="btn btn-action btn-danger delete-btn" data-id="${medicine.id}"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            addActionButtonListeners();
+        }
+        
+        function applyHighlights() {
+            newlyAddedIds.forEach(id => {
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row && !row.classList.contains('newly-added')) row.classList.add('newly-added');
+            });
+        }
+        
+        function scheduleHighlightRemoval(id) {
+            setTimeout(() => {
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) row.classList.remove('newly-added');
+                newlyAddedIds.delete(id);
+            }, 3000);
+        }
+        
+        function updateResultCount(current, total) {
+            countElement.textContent = current;
+            totalElement.textContent = total;
+            
+            let countText = `Showing <span class="highlight">${current}</span> medicines out of <span class="highlight">${total}</span> total`;
+            if (currentFilter === 'entrysoon') {
+                countText = `Showing <span class="entry-highlight">${current}</span> medicines that will enter 6-month expiry period within 30 days`;
+            } else if (currentFilter === 'sixmonths') {
+                countText = `Showing <span class="highlight">${current}</span> medicines expiring within 6 months`;
+            } else if (currentFilter === 'threemonths') {
+                countText = `Showing <span class="warning-highlight">${current}</span> medicines expiring within 3 months`;
+            } else if (currentFilter === 'onemonth') {
+                countText = `Showing <span class="danger-highlight">${current}</span> medicines expiring within 1 month`;
+            } else if (currentFilter === 'expired') {
+                countText = `Showing <span class="danger-highlight">${current}</span> expired medicines`;
+            } else if (currentFilter === 'reorder') {
+                countText = `Showing <span class="danger-highlight">${current}</span> medicines at or below their reorder level`;
+            } else if (currentFilter === 'month' && selectedMonth && selectedYear) {
+                const monthName = new Date(selectedYear, selectedMonth-1).toLocaleString('default', { month: 'long' });
+                countText = `Showing <span class="highlight">${current}</span> medicines expiring in ${monthName} ${selectedYear}`;
+            } else if (current === total) {
+                countText = `Showing all <span class="highlight">${total}</span> medicines`;
+            }
+            document.getElementById('resultCount').innerHTML = countText;
+        }
+        
+        // Filter functions
+        function showSixMonthMedicines() { currentFilter = 'sixmonths'; selectedMonth = null; applyFilterAndSearch(); }
+        function showThreeMonthMedicines() { currentFilter = 'threemonths'; selectedMonth = null; applyFilterAndSearch(); }
+        function showOneMonthMedicines() { currentFilter = 'onemonth'; selectedMonth = null; applyFilterAndSearch(); }
+        function showExpiredMedicines() { currentFilter = 'expired'; selectedMonth = null; applyFilterAndSearch(); }
+        function showEntrySoonMedicines() { currentFilter = 'entrysoon'; selectedMonth = null; applyFilterAndSearch(); }
+        function showReorderMedicines() { currentFilter = 'reorder'; selectedMonth = null; applyFilterAndSearch(); }
+        function showAllMedicines() { currentFilter = 'all'; selectedMonth = null; currentSearchTerm = ''; searchInput.value = ''; applyFilterAndSearch(); }
+        function performSearch() { currentSearchTerm = searchInput.value.trim(); applyFilterAndSearch(); }
+        function clearSearch() { currentSearchTerm = ''; searchInput.value = ''; applyFilterAndSearch(); }
+        function toggleSort() {
+            if (currentSort === 'expiry-asc') {
+                currentSort = 'days-desc';
+                sortBtn.innerHTML = '<i class="fas fa-sort-amount-up"></i> Sort by Expiry (Earliest First)';
+            } else {
+                currentSort = 'expiry-asc';
+                sortBtn.innerHTML = '<i class="fas fa-sort-amount-down"></i> Sort by Days (High to Low)';
+            }
+            applyFilterAndSearch();
+        }
+        
+        // Month filter handlers
+        function openMonthFilterModal() {
+            const currentYear = today.getFullYear();
+            yearSelect.innerHTML = '';
+            for (let y = currentYear; y <= currentYear + 5; y++) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.textContent = y;
+                yearSelect.appendChild(option);
+            }
+            monthSelect.value = today.getMonth() + 1;
+            yearSelect.value = currentYear;
+            monthFilterModal.style.display = 'block';
+        }
+        
+        function applyMonthFilter() {
+            selectedMonth = parseInt(monthSelect.value);
+            selectedYear = parseInt(yearSelect.value);
+            currentFilter = 'month';
+            monthFilterModal.style.display = 'none';
+            applyFilterAndSearch();
+        }
+        
+        function closeMonthFilterModal() {
+            monthFilterModal.style.display = 'none';
+        }
+        
+        // Add action button listeners
+        function addActionButtonListeners() {
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const medicineId = parseFloat(e.target.closest('.edit-btn').getAttribute('data-id'));
+                    editMedicine(medicineId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const medicineId = parseFloat(e.target.closest('.delete-btn').getAttribute('data-id'));
+                    showDeleteConfirmation(medicineId);
+                });
+            });
+
+            document.querySelectorAll('.stock-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const medicineId = parseFloat(e.target.closest('.stock-btn').getAttribute('data-id'));
+                    openStockModal(medicineId);
+                });
+            });
+        }
+        
+        // Edit medicine function
+        function editMedicine(medicineId) {
+            const medicine = allMedicines.find(m => m.id === medicineId);
+            if (!medicine) return;
+            
+            currentEditingId = medicineId;
+            isEditing = true;
+            
+            document.getElementById('modalTitle').textContent = 'Edit Medicine';
+            document.getElementById('medicineName').value = medicine.name;
+            document.getElementById('manufacturer').value = medicine.manufacturer || '';
+            document.getElementById('batchNo').value = medicine.batch || '';
+            document.getElementById('quantity').value = medicine.quantity;
+            document.getElementById('expiryDate').value = medicine.expiryDate ? formatDateForInput(medicine.expiryDate) : '';
+            document.getElementById('rate').value = medicine.rate;
+            document.getElementById('reorderLevel').value = (medicine.reorderLevel != null) ? medicine.reorderLevel : 10;
+            
+            medicineModal.style.display = 'block';
+        }
+        
+        // Add new medicine function
+        function addNewMedicine() {
+            currentEditingId = null;
+            isEditing = false;
+            
+            document.getElementById('modalTitle').textContent = 'Add New Medicine';
+            document.getElementById('medicineName').value = '';
+            document.getElementById('manufacturer').value = '';
+            document.getElementById('batchNo').value = '';
+            document.getElementById('quantity').value = '1';
+            document.getElementById('expiryDate').value = '';
+            document.getElementById('rate').value = '';
+            document.getElementById('reorderLevel').value = '10';
+            
+            medicineModal.style.display = 'block';
+        }
+        
+        // Format date to DD/MM/YYYY for input field
+        function formatDateForInput(date) {
+            if (!date || isNaN(date.getTime())) return '';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Save medicine function
+        function saveMedicine() {
+            const name = document.getElementById('medicineName').value.trim();
+            const manufacturer = document.getElementById('manufacturer').value.trim();
+            const batch = document.getElementById('batchNo').value.trim();
+            const quantity = parseFloat(document.getElementById('quantity').value) || 1;
+            const expiryDateStr = document.getElementById('expiryDate').value.trim();
+            const rate = parseFloat(document.getElementById('rate').value) || 0;
+            const reorderLevel = Math.max(0, parseInt(document.getElementById('reorderLevel').value) || 0);
+            
+            if (!name) {
+                alert('Please enter medicine name!');
+                return;
+            }
+            
+            if (!expiryDateStr) {
+                alert('Please enter expiry date!');
+                return;
+            }
+            
+            const expiryDate = parseDate(expiryDateStr);
+            if (!expiryDate || isNaN(expiryDate.getTime())) {
+                alert('Please enter a valid date in DD/MM/YYYY format!');
+                return;
+            }
+            
+            if (rate < 0) {
+                alert('Rate cannot be negative!');
+                return;
+            }
+            
+            if (isEditing && currentEditingId) {
+                const medicineIndex = allMedicines.findIndex(m => m.id === currentEditingId);
+                if (medicineIndex !== -1) {
+                    allMedicines[medicineIndex].name = name;
+                    allMedicines[medicineIndex].manufacturer = manufacturer;
+                    allMedicines[medicineIndex].batch = batch;
+                    allMedicines[medicineIndex].quantity = quantity;
+                    allMedicines[medicineIndex].expiryDate = expiryDate;
+                    allMedicines[medicineIndex].rate = rate;
+                    allMedicines[medicineIndex].reorderLevel = reorderLevel;
+                    allMedicines[medicineIndex].totalCost = quantity * rate;
+                    updateMedicineStatus(allMedicines[medicineIndex]);
+                    
+                    allMedicines.sort((a, b) => {
+                        if (!a.expiryDate || !b.expiryDate) return 0;
+                        return a.expiryDate.getTime() - b.expiryDate.getTime();
+                    });
+                    
+                    alert('Medicine updated successfully!');
+                }
+            } else {
+                const newMedicine = {
+                    id: Date.now(),
+                    name: name,
+                    manufacturer: manufacturer,
+                    batch: batch,
+                    quantity: quantity,
+                    expiryDate: expiryDate,
+                    rate: rate,
+                    reorderLevel: reorderLevel,
+                    status: '',
+                    daysRemaining: 0,
+                    notificationStatus: '',
+                    totalCost: quantity * rate
+                };
+                
+                updateMedicineStatus(newMedicine);
+                allMedicines.push(newMedicine);
+                
+                // Mark as newly added
+                newlyAddedIds.add(newMedicine.id);
+                scheduleHighlightRemoval(newMedicine.id);
+                
+                allMedicines.sort((a, b) => {
+                    if (!a.expiryDate || !b.expiryDate) return 0;
+                    return a.expiryDate.getTime() - b.expiryDate.getTime();
+                });
+                
+                alert('Medicine added successfully!');
+            }
+            
+            calculateStatistics();
+            applyFilterAndSearch();
+            saveDataToLocalStorage(); // <-- Save after modification
+            medicineModal.style.display = 'none';
+            document.getElementById('medicineForm').reset();
+        }
+        
+        // Show delete confirmation
+        function showDeleteConfirmation(medicineId) {
+            const medicine = allMedicines.find(m => m.id === medicineId);
+            if (!medicine) return;
+            
+            currentDeletingId = medicineId;
+            document.getElementById('deleteMessage').textContent = `Are you sure you want to delete "${medicine.name}"?`;
+            deleteConfirmation.style.display = 'block';
+        }
+        
+        // Delete medicine function
+        function deleteMedicine(medicineId) {
+            const medicineIndex = allMedicines.findIndex(m => m.id === medicineId);
+            if (medicineIndex === -1) return;
+            
+            allMedicines.splice(medicineIndex, 1);
+            newlyAddedIds.delete(medicineId);
+            
+            calculateStatistics();
+            applyFilterAndSearch();
+            saveDataToLocalStorage(); // <-- Save after deletion
+            deleteConfirmation.style.display = 'none';
+            alert('Medicine deleted successfully!');
+        }
+        
+        // Export to Excel function
+        function exportToExcel() {
+            const medicinesToExport = filteredMedicines.length > 0 ? filteredMedicines : allMedicines;
+            
+            if (medicinesToExport.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+            
+            let csvContent = "Medicine Name,Manufacturer,Batch No.,Expiry Date,Quantity,Rate,Total Cost,Status,Days Remaining\n";
+            
+            medicinesToExport.forEach(medicine => {
+                let expiryDisplay = 'Invalid Date';
+                if (medicine.expiryDate && !isNaN(medicine.expiryDate.getTime())) {
+                    expiryDisplay = formatDateForInput(medicine.expiryDate);
+                }
+                
+                let daysDisplay = 'N/A';
+                if (medicine.daysRemaining !== null && medicine.daysRemaining !== undefined) {
+                    if (medicine.daysRemaining > 0) {
+                        daysDisplay = medicine.daysRemaining + ' days';
+                    } else if (medicine.daysRemaining < 0) {
+                        daysDisplay = 'Expired ' + Math.abs(medicine.daysRemaining) + ' days ago';
+                    } else {
+                        daysDisplay = 'Expires today';
+                    }
+                }
+                
+                const escapeCSV = (str) => {
+                    if (str === null || str === undefined) return '';
+                    const string = String(str);
+                    if (string.includes(',') || string.includes('"') || string.includes('\n')) {
+                        return '"' + string.replace(/"/g, '""') + '"';
+                    }
+                    return string;
+                };
+                
+                csvContent += `${escapeCSV(medicine.name)},${escapeCSV(medicine.manufacturer || '')},${escapeCSV(medicine.batch)},${escapeCSV(expiryDisplay)},${escapeCSV(medicine.quantity)},${escapeCSV(medicine.rate)},${escapeCSV(medicine.totalCost)},${escapeCSV(medicine.status)},${escapeCSV(daysDisplay)}\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const fileName = `medicines_export_${new Date().toISOString().slice(0, 10)}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('Excel file exported successfully!');
+        }
+        
+        // Print report function – now includes manufacturer and excludes rate/total
+        function printReport() {
+            const medicinesToPrint = filteredMedicines.length > 0 ? filteredMedicines : allMedicines;
+            
+            if (medicinesToPrint.length === 0) {
+                alert('No data to print!');
+                return;
+            }
+            
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            
+            let printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Medicine Expiry Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { color: #0A2540; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background-color: #0A2540; color: #fff; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
+                        td { padding: 10px; border-bottom: 1px solid #eee; }
+                        .summary { background-color: #f4f6f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        .summary-item { margin: 5px 0; }
+                        .expired { color: #dc2626; }
+                        .warning { color: #f59e0b; }
+                        .entry-soon { color: #0284c7; }
+                        @media print {
+                            body { margin: 0; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Medicine Expiry Report</h1>
+                    <div class="summary">
+                        <div class="summary-item"><strong>Report Date:</strong> ${todayFormatted}</div>
+                        <div class="summary-item"><strong>Total Items:</strong> ${totalItems}</div>
+                        <div class="summary-item"><strong>Medicines in Report:</strong> ${medicinesToPrint.length}</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th>Manufacturer</th>
+                                <th>Batch No.</th>
+                                <th>Expiry Date</th>
+                                <th>Quantity</th>
+                                <th>Status</th>
+                                <th>Days Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            medicinesToPrint.forEach(medicine => {
+                let expiryDisplay = 'Invalid Date';
+                if (medicine.expiryDate && !isNaN(medicine.expiryDate.getTime())) {
+                    expiryDisplay = formatDate(medicine.expiryDate);
+                }
+                
+                let daysDisplay = 'N/A';
+                let statusClass = '';
+                if (medicine.daysRemaining !== null && medicine.daysRemaining !== undefined) {
+                    if (medicine.daysRemaining > 0) {
+                        daysDisplay = medicine.daysRemaining + ' days';
+                    } else if (medicine.daysRemaining < 0) {
+                        daysDisplay = 'Expired ' + Math.abs(medicine.daysRemaining) + ' days ago';
+                        statusClass = 'expired';
+                    } else {
+                        daysDisplay = 'Expires today';
+                        statusClass = 'warning';
+                    }
+                }
+                
+                if (medicine.status === 'Entering 6-Month Period Soon') {
+                    statusClass = 'entry-soon';
+                }
+                
+                printContent += `
+                    <tr>
+                        <td>${medicine.name}</td>
+                        <td>${medicine.manufacturer || '-'}</td>
+                        <td>${medicine.batch || '-'}</td>
+                        <td>${expiryDisplay}</td>
+                        <td>${medicine.quantity}</td>
+                        <td class="${statusClass}">${medicine.status}</td>
+                        <td class="${statusClass}">${daysDisplay}</td>
+                    </tr>
+                `;
+            });
+            
+            printContent += `
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; text-align: center; color: #666; font-size: 0.9rem;">
+                        <p>Generated by Medicine Expiry Tracker on ${new Date().toLocaleString()}</p>
+                    </div>
+                    <div class="no-print" style="margin-top: 20px; text-align: center;">
+                        <button onclick="window.print()" style="padding: 10px 20px; background-color: #0284c7; color: white; border: none; border-radius: 5px; cursor: pointer;">Print Report</button>
+                        <button onclick="window.close()" style="padding: 10px 20px; background-color: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Close</button>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+        }
+        
+        // ---------- FILE-BACKED AUTOSAVE (JSON file in the same folder) ----------
+        const KPFile = (() => {
+            const supported = 'showSaveFilePicker' in window;
+            let handle = null;
+            function idbOpen(){
+                return new Promise((res, rej) => {
+                    const rq = indexedDB.open('kp_suite_files', 1);
+                    rq.onupgradeneeded = () => rq.result.createObjectStore('handles');
+                    rq.onsuccess = () => res(rq.result);
+                    rq.onerror = () => rej(rq.error);
+                });
+            }
+            async function idbGet(key){
+                const db = await idbOpen();
+                return new Promise((res, rej) => {
+                    const tx = db.transaction('handles','readonly').objectStore('handles').get(key);
+                    tx.onsuccess = () => res(tx.result || null);
+                    tx.onerror = () => rej(tx.error);
+                });
+            }
+            async function idbSet(key, val){
+                const db = await idbOpen();
+                return new Promise((res, rej) => {
+                    const tx = db.transaction('handles','readwrite');
+                    tx.objectStore('handles').put(val, key);
+                    tx.oncomplete = () => res();
+                    tx.onerror = () => rej(tx.error);
+                });
+            }
+            async function reconnect(key){
+                if (!supported) return 'unsupported';
+                try {
+                    const h = await idbGet(key);
+                    if (!h) return 'none';
+                    handle = h;
+                    const perm = await h.queryPermission({ mode: 'readwrite' });
+                    return perm === 'granted' ? 'granted' : 'prompt';
+                } catch(e){ return 'none'; }
+            }
+            async function requestPermission(){
+                if (!handle) return false;
+                try { return (await handle.requestPermission({ mode: 'readwrite' })) === 'granted'; }
+                catch(e){ return false; }
+            }
+            async function connect(key, suggestedName){
+                if (!supported) return null;
+                const h = await window.showSaveFilePicker({
+                    suggestedName,
+                    types: [{ description: 'JSON file', accept: { 'application/json': ['.json'] } }]
+                });
+                handle = h;
+                await idbSet(key, h);
+                return h;
+            }
+            async function readJSON(){
+                if (!handle) return null;
+                try {
+                    const file = await handle.getFile();
+                    const text = await file.text();
+                    if (!text || !text.trim()) return null;
+                    return JSON.parse(text);
+                } catch(e){ return null; }
+            }
+            async function writeJSON(data){
+                if (!handle) return false;
+                try {
+                    const w = await handle.createWritable();
+                    await w.write(JSON.stringify(data, null, 2));
+                    await w.close();
+                    return true;
+                } catch(e){ console.error('KPFile write error', e); return false; }
+            }
+            function fileName(){ return handle ? handle.name : null; }
+            function isConnected(){ return !!handle; }
+            return { supported, reconnect, requestPermission, connect, readJSON, writeJSON, fileName, isConnected };
+        })();
+        const FILE_HANDLE_KEY = 'expiry_check';
+
+        function updateFileStatusUI(){
+            const el = document.getElementById('fileStatus');
+            if (!el) return;
+            if (KPFile.isConnected()){
+                el.className = 'file-status connected';
+                el.innerHTML = `<i class="fas fa-check-circle"></i> Autosaving to ${KPFile.fileName()}`;
+            } else if (!KPFile.supported){
+                el.className = 'file-status disconnected';
+                el.innerHTML = `<i class="fas fa-circle-info"></i> Browser cache only (use Chrome/Edge for file autosave)`;
+            } else {
+                el.className = 'file-status disconnected';
+                el.innerHTML = `<i class="fas fa-plug"></i> Autosave: browser only`;
+            }
+        }
+
+        // ---------- LOCAL STORAGE FUNCTIONS ----------
+        const STORAGE_KEY = 'medicineTrackerData';
+        const LEDGER_KEY = 'medicineStockLedger';
+
+        // ---------- STOCK MOVEMENT LEDGER ----------
+        // A running audit trail of every manual stock in/out adjustment,
+        // independent of the medicine records themselves so history is
+        // kept even if a medicine is later edited or deleted.
+        let stockLedger = [];
+        let ledgerSaveTimer = null;
+        function loadStockLedger(){
+            try {
+                const raw = localStorage.getItem(LEDGER_KEY);
+                stockLedger = raw ? JSON.parse(raw) : [];
+            } catch(e){ stockLedger = []; }
+            KPCloud.getTable('MedicineStockLedger').then(items => {
+                if (items && items.length) {
+                    stockLedger = items;
+                    localStorage.setItem(LEDGER_KEY, JSON.stringify(stockLedger));
+                    renderLedgerTable();
+                }
+            }).catch(err => console.warn('Cloud ledger fetch failed, using local cache', err));
+        }
+        function saveStockLedger(){
+            try { localStorage.setItem(LEDGER_KEY, JSON.stringify(stockLedger)); } catch(e){ console.error(e); }
+            clearTimeout(ledgerSaveTimer);
+            ledgerSaveTimer = setTimeout(() => {
+                KPCloud.saveTable('MedicineStockLedger', stockLedger).catch(err => console.warn('Cloud ledger save failed', err));
+            }, 500);
+        }
+        function addLedgerEntry(medicine, direction, qty, reason, note, newBalance){
+            stockLedger.unshift({
+                id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+                date: new Date().toISOString(),
+                medicineId: medicine.id,
+                medicineName: medicine.name,
+                direction, // 'in' | 'out'
+                qty,
+                reason,
+                note: note || '',
+                newBalance
+            });
+            saveStockLedger();
+        }
+
+        let stockModalMedicineId = null;
+        function openStockModal(medicineId){
+            const medicine = allMedicines.find(m => m.id === medicineId);
+            if (!medicine) return;
+            stockModalMedicineId = medicineId;
+            document.getElementById('stockModalMedName').textContent = medicine.name;
+            document.getElementById('stockModalCurrentQty').textContent = medicine.quantity;
+            document.getElementById('stockQty').value = '';
+            document.getElementById('stockReason').value = 'Purchase received';
+            document.getElementById('stockNote').value = '';
+            document.querySelector('input[name="stockDirection"][value="in"]').checked = true;
+            document.getElementById('stockModal').style.display = 'block';
+        }
+
+        document.getElementById('stockForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const medicine = allMedicines.find(m => m.id === stockModalMedicineId);
+            if (!medicine) return;
+            const direction = document.querySelector('input[name="stockDirection"]:checked').value;
+            const qty = parseFloat(document.getElementById('stockQty').value);
+            const reason = document.getElementById('stockReason').value;
+            const note = document.getElementById('stockNote').value.trim();
+
+            if (!qty || qty <= 0) { alert('Please enter a quantity greater than 0.'); return; }
+            if (direction === 'out' && qty > medicine.quantity) {
+                if (!confirm(`This would take stock below zero (current: ${medicine.quantity}). Continue anyway?`)) return;
+            }
+
+            medicine.quantity = direction === 'in' ? medicine.quantity + qty : medicine.quantity - qty;
+            medicine.totalCost = medicine.quantity * medicine.rate;
+            addLedgerEntry(medicine, direction, qty, reason, note, medicine.quantity);
+
+            calculateStatistics();
+            applyFilterAndSearch();
+            saveDataToLocalStorage();
+            document.getElementById('stockModal').style.display = 'none';
+        });
+
+        document.getElementById('stockModalClose').addEventListener('click', () => {
+            document.getElementById('stockModal').style.display = 'none';
+        });
+        document.getElementById('stockCancelBtn').addEventListener('click', () => {
+            document.getElementById('stockModal').style.display = 'none';
+        });
+
+        function renderLedgerTable(filterText){
+            const body = document.getElementById('ledgerTableBody');
+            const q = (filterText||'').trim().toLowerCase();
+            const rows = q ? stockLedger.filter(l => l.medicineName.toLowerCase().includes(q)) : stockLedger;
+            if (!rows.length){
+                body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:#888;">No stock movements recorded yet.</td></tr>`;
+                return;
+            }
+            body.innerHTML = rows.slice(0, 500).map(l => {
+                const dt = new Date(l.date);
+                const dateStr = isNaN(dt.getTime()) ? '-' : dt.toLocaleString();
+                const typeColor = l.direction === 'in' ? '#16a34a' : '#dc2626';
+                const typeLabel = l.direction === 'in' ? '▲ In' : '▼ Out';
+                return `<tr>
+                    <td style="padding:8px 12px;white-space:nowrap;">${dateStr}</td>
+                    <td style="padding:8px 12px;">${l.medicineName}</td>
+                    <td style="padding:8px 12px;text-align:center;color:${typeColor};font-weight:700;">${typeLabel}</td>
+                    <td style="padding:8px 12px;text-align:right;">${l.qty}</td>
+                    <td style="padding:8px 12px;text-align:right;">${l.newBalance}</td>
+                    <td style="padding:8px 12px;">${l.reason}</td>
+                    <td style="padding:8px 12px;color:#666;">${l.note || '-'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('viewLedgerBtn').addEventListener('click', () => {
+            document.getElementById('ledgerSearchInput').value = '';
+            renderLedgerTable('');
+            document.getElementById('ledgerModal').style.display = 'block';
+        });
+        document.getElementById('ledgerModalClose').addEventListener('click', () => {
+            document.getElementById('ledgerModal').style.display = 'none';
+        });
+        document.getElementById('ledgerSearchInput').addEventListener('input', (e) => {
+            renderLedgerTable(e.target.value);
+        });
+
+        loadStockLedger();
+        
+        function serializeMedicines(){
+            return allMedicines.map(medicine => ({
+                ...medicine,
+                // Guard against Invalid Date objects (e.g. entries with "-" as expiry)
+                // calling .toISOString() on an Invalid Date throws RangeError and kills the save
+                expiryDate: medicine.expiryDate && !isNaN(medicine.expiryDate.getTime())
+                    ? medicine.expiryDate.toISOString()
+                    : null
+            }));
+        }
+
+        let trackerSaveTimer = null;
+        function saveDataToLocalStorage() {
+            try {
+                const dataToSave = serializeMedicines();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+                showSaveIndicator();
+                if (KPFile.isConnected()) {
+                    KPFile.writeJSON({ exportedAt: new Date().toISOString(), medicines: dataToSave })
+                        .then(updateFileStatusUI);
+                }
+                clearTimeout(trackerSaveTimer);
+                trackerSaveTimer = setTimeout(() => {
+                    KPCloud.saveTable('MedicineTracker', dataToSave).catch(err => console.warn('Cloud tracker save failed', err));
+                }, 500);
+            } catch (e) {
+                console.error('Failed to save to localStorage:', e);
+            }
+        }
+        
+        // Show a brief "Saved ✓" indicator so users know data is persisted
+        function showSaveIndicator() {
+            let indicator = document.getElementById('saveIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'saveIndicator';
+                indicator.style.cssText = `
+                    position: fixed; bottom: 20px; right: 20px;
+                    background: #4caf50; color: white;
+                    padding: 10px 18px; border-radius: 6px;
+                    font-weight: 600; font-size: 0.9rem;
+                    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+                    z-index: 9999; transition: opacity 0.5s ease;
+                    display: flex; align-items: center; gap: 8px;
+                `;
+                document.body.appendChild(indicator);
+            }
+            indicator.innerHTML = '<i class="fas fa-check-circle"></i> Data Saved';
+            indicator.style.opacity = '1';
+            clearTimeout(indicator._hideTimer);
+            indicator._hideTimer = setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
+        }
+        
+        function parseMedicineArray(parsed) {
+            if (!Array.isArray(parsed) || parsed.length === 0) return null;
+            const loaded = [];
+            parsed.forEach((item, i) => {
+                try {
+                    // Safely parse the expiry date
+                    if (item.expiryDate) {
+                        const d = new Date(item.expiryDate);
+                        item.expiryDate = isNaN(d.getTime()) ? null : d;
+                    } else {
+                        item.expiryDate = null;
+                    }
+                    item.totalCost = (item.quantity || 0) * (item.rate || 0);
+                    updateMedicineStatus(item);
+                    loaded.push(item);
+                } catch (itemErr) {
+                    console.warn(`Skipping corrupted medicine entry at index ${i}:`, itemErr);
+                }
+            });
+            return loaded.length > 0 ? loaded : null;
+        }
+
+        function loadDataFromLocalStorage() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) return null;
+            try {
+                return parseMedicineArray(JSON.parse(saved));
+            } catch (e) {
+                console.error('Failed to parse localStorage data:', e);
+                return null;
+            }
+        }
+
+        async function loadDataFromFile() {
+            const data = await KPFile.readJSON();
+            if (!data || !data.medicines) return null;
+            try {
+                return parseMedicineArray(data.medicines);
+            } catch (e) {
+                console.error('Failed to parse file data:', e);
+                return null;
+            }
+        }
+
+        function applyLoadedMedicines(list) {
+            allMedicines = list;
+            allMedicines.sort((a, b) => {
+                if (!a.expiryDate || !b.expiryDate) return 0;
+                return a.expiryDate.getTime() - b.expiryDate.getTime();
+            });
+            calculateStatistics();
+            applyFilterAndSearch();
+        }
+        
+        // Bulk add functionality (modified to save after addition)
+        bulkAddBtn.addEventListener('click', () => {
+            bulkModal.style.display = 'block';
+        });
+        
+        document.getElementById('bulkModalClose').addEventListener('click', () => {
+            bulkModal.style.display = 'none';
+            document.getElementById('bulkInput').value = '';
+        });
+        
+        document.getElementById('cancelBulkBtn').addEventListener('click', () => {
+            bulkModal.style.display = 'none';
+            document.getElementById('bulkInput').value = '';
+        });
+        
+        document.getElementById('saveBulkBtn').addEventListener('click', () => {
+            const bulkInput = document.getElementById('bulkInput').value.trim();
+            if (!bulkInput) {
+                alert('Please enter medicine data!');
+                return;
+            }
+            
+            const lines = bulkInput.split('\n');
+            let addedCount = 0;
+            let errorCount = 0;
+            const newIds = [];
+            
+            lines.forEach((line, index) => {
+                line = line.trim();
+                if (!line) return;
+                
+                const parts = line.split(',').map(part => part.trim());
+                if (parts.length < 6) {
+                    console.error(`Line ${index + 1}: Invalid format. Expected: Name, Manufacturer, Batch, Expiry, Quantity, Rate`);
+                    errorCount++;
+                    return;
+                }
+                
+                const [name, manufacturer, batch, expiryStr, quantityStr, rateStr] = parts;
+                const quantity = parseFloat(quantityStr) || 1;
+                const rate = parseFloat(rateStr) || 0;
+                const expiryDate = parseDate(expiryStr);
+                
+                if (!name || !expiryDate || isNaN(expiryDate.getTime())) {
+                    console.error(`Line ${index + 1}: Invalid name or date format`);
+                    errorCount++;
+                    return;
+                }
+                
+                const newMedicine = {
+                    id: Date.now() + index + Math.random(),
+                    name: name,
+                    manufacturer: manufacturer,
+                    batch: batch,
+                    quantity: quantity,
+                    expiryDate: expiryDate,
+                    rate: rate,
+                    status: '',
+                    daysRemaining: 0,
+                    notificationStatus: '',
+                    totalCost: quantity * rate
+                };
+                
+                updateMedicineStatus(newMedicine);
+                allMedicines.push(newMedicine);
+                newIds.push(newMedicine.id);
+                addedCount++;
+            });
+            
+            if (addedCount > 0) {
+                newIds.forEach(id => {
+                    newlyAddedIds.add(id);
+                    scheduleHighlightRemoval(id);
+                });
+                
+                allMedicines.sort((a, b) => {
+                    if (!a.expiryDate || !b.expiryDate) return 0;
+                    return a.expiryDate.getTime() - b.expiryDate.getTime();
+                });
+                
+                calculateStatistics();
+                applyFilterAndSearch();
+                saveDataToLocalStorage(); // <-- Save after bulk addition
+                
+                alert(`Successfully added ${addedCount} medicine(s). ${errorCount > 0 ? `Failed to add ${errorCount} medicine(s).` : ''}`);
+            } else {
+                alert('No valid medicines were added. Please check your data format.');
+            }
+            
+            bulkModal.style.display = 'none';
+            document.getElementById('bulkInput').value = '';
+        });
+        
+        // ---------- EXPORT / IMPORT JSON ----------
+
+        function exportToJSON() {
+            if (allMedicines.length === 0) {
+                alert('No medicines to export!');
+                return;
+            }
+
+            const dataToExport = allMedicines.map(medicine => ({
+                name:         medicine.name,
+                manufacturer: medicine.manufacturer || '',
+                batch:        medicine.batch || '',
+                expiryDate:   medicine.expiryDate && !isNaN(medicine.expiryDate.getTime())
+                                ? medicine.expiryDate.toISOString()
+                                : null,
+                quantity:     medicine.quantity,
+                rate:         medicine.rate
+            }));
+
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                version:    1,
+                count:      dataToExport.length,
+                medicines:  dataToExport
+            };
+
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url  = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10);
+            link.href     = url;
+            link.download = `medicines_backup_${date}.json`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert(`✅ Exported ${dataToExport.length} medicines.\n\nSave this file and use "Import Data" on any computer to restore your list.`);
+        }
+
+        // Holds parsed data waiting for user to confirm import mode
+        let pendingImportData = [];
+
+        function openImportFile() {
+            document.getElementById('importJsonInput').value = '';
+            document.getElementById('importJsonInput').click();
+        }
+
+        document.getElementById('importJsonInput').addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+
+                    // Support both {medicines:[...]} wrapper and a bare array
+                    const raw = Array.isArray(parsed) ? parsed : (parsed.medicines || []);
+                    if (!Array.isArray(raw) || raw.length === 0) {
+                        alert('❌ No medicine data found in this file. Make sure you are importing a file exported from this software.');
+                        return;
+                    }
+
+                    // Validate & convert each entry
+                    pendingImportData = [];
+                    let skipped = 0;
+                    raw.forEach((item, i) => {
+                        if (!item.name) { skipped++; return; }
+                        const d = item.expiryDate ? new Date(item.expiryDate) : null;
+                        pendingImportData.push({
+                            id:           Date.now() + i + Math.random(),
+                            name:         item.name,
+                            manufacturer: item.manufacturer || '',
+                            batch:        item.batch || '',
+                            expiryDate:   d && !isNaN(d.getTime()) ? d : null,
+                            quantity:     parseFloat(item.quantity) || 1,
+                            rate:         parseFloat(item.rate) || 0,
+                            totalCost:    (parseFloat(item.quantity) || 1) * (parseFloat(item.rate) || 0),
+                            status:       '',
+                            daysRemaining: 0,
+                            notificationStatus: ''
+                        });
+                    });
+
+                    pendingImportData.forEach(m => updateMedicineStatus(m));
+
+                    if (pendingImportData.length === 0) {
+                        alert('❌ No valid medicine entries found in this file.');
+                        return;
+                    }
+
+                    // Show confirmation modal
+                    const exportedAt = parsed.exportedAt
+                        ? new Date(parsed.exportedAt).toLocaleString()
+                        : 'Unknown';
+                    document.getElementById('importSummary').innerHTML = `
+                        <div><i class="fas fa-file-alt" style="color:#0284c7"></i> &nbsp;<strong>File:</strong> ${file.name}</div>
+                        <div><i class="fas fa-clock" style="color:#0284c7"></i> &nbsp;<strong>Exported on:</strong> ${exportedAt}</div>
+                        <div><i class="fas fa-pills" style="color:#0284c7"></i> &nbsp;<strong>Medicines in file:</strong> ${pendingImportData.length}${skipped > 0 ? ` <span style="color:#c62828">(${skipped} invalid entries skipped)</span>` : ''}</div>
+                        <div><i class="fas fa-database" style="color:#0284c7"></i> &nbsp;<strong>Current list has:</strong> ${allMedicines.length} medicines</div>
+                    `;
+
+                    // Highlight radio option borders on selection
+                    document.querySelectorAll('input[name="importMode"]').forEach(r => {
+                        r.addEventListener('change', () => {
+                            document.getElementById('mergeOption').style.borderColor   = r.value === 'merge'   ? '#0284c7' : '#e0e0e0';
+                            document.getElementById('replaceOption').style.borderColor = r.value === 'replace' ? '#f44336' : '#e0e0e0';
+                        });
+                    });
+                    // Reset border colours
+                    document.getElementById('mergeOption').style.borderColor   = '#0284c7';
+                    document.getElementById('replaceOption').style.borderColor = '#e0e0e0';
+                    document.querySelector('input[name="importMode"][value="merge"]').checked = true;
+
+                    document.getElementById('importModal').style.display = 'block';
+
+                } catch (err) {
+                    alert('❌ Could not read the file. Make sure it is a valid JSON file exported from this software.');
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('confirmImportBtn').addEventListener('click', () => {
+            const mode = document.querySelector('input[name="importMode"]:checked').value;
+
+            if (mode === 'replace') {
+                allMedicines = pendingImportData;
+            } else {
+                // Merge — append and re-sort
+                allMedicines = [...allMedicines, ...pendingImportData];
+            }
+
+            allMedicines.sort((a, b) => {
+                if (!a.expiryDate || !b.expiryDate) return 0;
+                return a.expiryDate.getTime() - b.expiryDate.getTime();
+            });
+
+            calculateStatistics();
+            applyFilterAndSearch();
+            saveDataToLocalStorage();
+
+            document.getElementById('importModal').style.display = 'none';
+            pendingImportData = [];
+
+            const action = mode === 'replace' ? 'replaced with' : 'merged — now contains';
+            alert(`✅ Import complete!\nYour medicine list has been ${action} ${allMedicines.length} medicines.`);
+        });
+
+        document.getElementById('cancelImportBtn').addEventListener('click', () => {
+            document.getElementById('importModal').style.display = 'none';
+            pendingImportData = [];
+        });
+        document.getElementById('importModalClose').addEventListener('click', () => {
+            document.getElementById('importModal').style.display = 'none';
+            pendingImportData = [];
+        });
+        window.addEventListener('click', e => {
+            if (e.target === document.getElementById('importModal')) {
+                document.getElementById('importModal').style.display = 'none';
+                pendingImportData = [];
+            }
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', exportToJSON);
+        document.getElementById('importJsonBtn').addEventListener('click', openImportFile);
+
+        // ---------- CONNECT / RECONNECT DATA FILE ----------
+        document.getElementById('btnConnectFile').addEventListener('click', async () => {
+            if (!KPFile.supported) {
+                alert("Your browser doesn't support file autosave — try Chrome or Edge. Your data will keep saving to this browser instead.");
+                return;
+            }
+            try {
+                await KPFile.connect(FILE_HANDLE_KEY, 'expiry_check_data.json');
+                const fileData = await loadDataFromFile();
+                if (fileData && fileData.length > 0) {
+                    if (confirm('This file already has saved medicines. Load it now? (Choose Cancel to keep what\'s on screen and overwrite the file with it instead.)')) {
+                        applyLoadedMedicines(fileData);
+                    }
+                }
+                saveDataToLocalStorage();
+                document.getElementById('reconnectBanner').classList.remove('show');
+                updateFileStatusUI();
+            } catch (err) {
+                // user cancelled the picker
+            }
+        });
+
+        document.getElementById('btnReconnectFile').addEventListener('click', async () => {
+            const ok = await KPFile.requestPermission();
+            if (ok) {
+                const fileData = await loadDataFromFile();
+                if (fileData && fileData.length > 0) applyLoadedMedicines(fileData);
+                document.getElementById('reconnectBanner').classList.remove('show');
+                updateFileStatusUI();
+            } else {
+                alert('Could not reconnect — try "Connect Data File" instead.');
+            }
+        });
+
+        // ---------- END EXPORT / IMPORT JSON ----------
+        sixMonthBtn.addEventListener('click', showSixMonthMedicines);
+        threeMonthBtn.addEventListener('click', showThreeMonthMedicines);
+        oneMonthBtn.addEventListener('click', showOneMonthMedicines);
+        expiredBtn.addEventListener('click', showExpiredMedicines);
+        entrySoonBtn.addEventListener('click', showEntrySoonMedicines);
+        document.getElementById('reorderBtn').addEventListener('click', showReorderMedicines);
+        showAllBtn.addEventListener('click', showAllMedicines);
+        addMedicineBtn.addEventListener('click', addNewMedicine);
+        exportExcelBtn.addEventListener('click', exportToExcel);
+        printBtn.addEventListener('click', printReport);
+        searchInput.addEventListener('input', performSearch);
+        clearSearchBtn.addEventListener('click', clearSearch);
+        sortBtn.addEventListener('click', toggleSort);
+        
+        document.getElementById('resetDataBtn').addEventListener('click', () => {
+            if (confirm('⚠️ This will clear ALL saved data (including medicines you added) and reload the built-in default list. Are you sure?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        });
+        
+        monthFilterBtn.addEventListener('click', openMonthFilterModal);
+        applyMonthFilterBtn.addEventListener('click', applyMonthFilter);
+        cancelMonthFilterBtn.addEventListener('click', closeMonthFilterModal);
+        monthModalClose.addEventListener('click', closeMonthFilterModal);
+        window.addEventListener('click', (e) => {
+            if (e.target === monthFilterModal) closeMonthFilterModal();
+        });
+        
+        document.getElementById('saveBtn').addEventListener('click', saveMedicine);
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            medicineModal.style.display = 'none';
+            document.getElementById('medicineForm').reset();
+        });
+        
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            deleteMedicine(currentDeletingId);
+        });
+        
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+            deleteConfirmation.style.display = 'none';
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === medicineModal) {
+                medicineModal.style.display = 'none';
+                document.getElementById('medicineForm').reset();
+            }
+            if (e.target === deleteConfirmation) {
+                deleteConfirmation.style.display = 'none';
+            }
+            if (e.target === bulkModal) {
+                bulkModal.style.display = 'none';
+                document.getElementById('bulkInput').value = '';
+            }
+            if (e.target === document.getElementById('stockModal')) {
+                document.getElementById('stockModal').style.display = 'none';
+            }
+            if (e.target === document.getElementById('ledgerModal')) {
+                document.getElementById('ledgerModal').style.display = 'none';
+            }
+        });
+        
+        // Close modal buttons
+        document.querySelectorAll('.close').forEach(closeBtn => {
+            if (closeBtn.id !== 'monthModalClose') {
+                closeBtn.addEventListener('click', function() {
+                    if (this.closest('#medicineModal')) {
+                        medicineModal.style.display = 'none';
+                        document.getElementById('medicineForm').reset();
+                    } else if (this.closest('#bulkModal')) {
+                        bulkModal.style.display = 'none';
+                        document.getElementById('bulkInput').value = '';
+                    }
+                });
+            }
+        });
+        
+        // Initialize the table on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTable();
+        });
+        
+        async function initializeTable() {
+            // Try to reconnect a previously-linked JSON data file first
+            let loadedFromFile = false;
+            const status = await KPFile.reconnect(FILE_HANDLE_KEY);
+            if (status === 'granted') {
+                const fileData = await loadDataFromFile();
+                if (fileData && fileData.length > 0) {
+                    allMedicines = fileData;
+                    loadedFromFile = true;
+                }
+            } else if (status === 'prompt') {
+                document.getElementById('reconnectBanner').classList.add('show');
+            }
+            updateFileStatusUI();
+
+            // Fall back to localStorage
+            const savedMedicines = loadedFromFile ? null : loadDataFromLocalStorage();
+            if (loadedFromFile) {
+                allMedicines.sort((a, b) => {
+                    if (!a.expiryDate || !b.expiryDate) return 0;
+                    return a.expiryDate.getTime() - b.expiryDate.getTime();
+                });
+            } else if (savedMedicines && savedMedicines.length > 0) {
+                allMedicines = savedMedicines;
+            } else {
+                // No saved data – load hardcoded defaults
+                allMedicines = [];
+                defaultMedicineData.forEach((medicine, index) => {
+                    // medicine is expected to have 6 fields: [name, manufacturer, batch, expiry, qty, rate]
+                    const medicineObj = {
+                        id: Date.now() + index,
+                        name: medicine[0],
+                        manufacturer: medicine[1] || DEFAULT_MANUFACTURER,
+                        batch: medicine[2] || '',
+                        expiryDate: parseDate(medicine[3]),
+                        quantity: parseFloat(medicine[4]) || 1,
+                        rate: parseFloat(String(medicine[5]).replace(/,/g, '')) || 0,
+                        totalCost: 0
+                    };
+                    medicineObj.totalCost = medicineObj.quantity * medicineObj.rate;
+                    updateMedicineStatus(medicineObj);
+                    allMedicines.push(medicineObj);
+                });
+                allMedicines.sort((a, b) => {
+                    if (!a.expiryDate || !b.expiryDate) return 0;
+                    return a.expiryDate.getTime() - b.expiryDate.getTime();
+                });
+                // Save initial default data to localStorage (now safe – invalid dates handled)
+                saveDataToLocalStorage();
+            }
+            
+            calculateStatistics();
+            displayMedicines(allMedicines);
+            updateResultCount(allMedicines.length, allMedicines.length);
+
+            // Pull the latest from the cloud (may override the local/file copy
+            // if another device has newer data), then keep polling for changes.
+            refreshFromCloud();
+            setInterval(refreshFromCloud, 20000);
+        }
+
+        async function refreshFromCloud(){
+            try {
+                const items = await KPCloud.getTable('MedicineTracker');
+                if (items && items.length) {
+                    allMedicines = parseMedicineArray(items) || [];
+                    allMedicines.sort((a, b) => {
+                        if (!a.expiryDate || !b.expiryDate) return 0;
+                        return a.expiryDate.getTime() - b.expiryDate.getTime();
+                    });
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeMedicines()));
+                    calculateStatistics();
+                    displayMedicines(allMedicines);
+                    updateResultCount(allMedicines.length, allMedicines.length);
+                }
+            } catch (e) { console.warn('Cloud tracker refresh failed', e); }
+        }
+    </script>
+    <script>
+        (function(){
+            function tick(){
+                const now = new Date();
+                const clock = document.getElementById('liveClock');
+                const sideClock = document.getElementById('sidebarClock');
+                const timeStr = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                const dateStr = now.toLocaleDateString([], {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+                if(clock) clock.textContent = dateStr + '  ·  ' + timeStr;
+                if(sideClock) sideClock.textContent = dateStr + ' · ' + timeStr;
+            }
+            tick();
+            setInterval(tick, 30000);
+
+            const sidebar = document.getElementById('appSidebar');
+            const mainWrap = document.getElementById('mainWrap');
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            if(collapseBtn) collapseBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                mainWrap.classList.toggle('collapsed');
+            });
+            if(mobileBtn) mobileBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('mobile-open');
+            });
+            document.addEventListener('click', (e) => {
+                if(window.innerWidth <= 980 && sidebar.classList.contains('mobile-open')){
+                    if(!sidebar.contains(e.target) && !mobileBtn.contains(e.target)){
+                        sidebar.classList.remove('mobile-open');
+                    }
+                }
+            });
+        })();
+    </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed', err));
+    });
+  }
+</script>
+</body>
+</html>
